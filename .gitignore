@@ -1,2 +1,4 @@
 /target
 /tmp
+.claude/settings.local.json
+.claude/memory.db
