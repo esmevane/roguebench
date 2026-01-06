@@ -1,8 +1,12 @@
 //! SQLite schema and database operations.
 
+use refinery::embed_migrations;
 use roguebench_core::items::{ItemDefinition, ItemId};
-use rusqlite::{Connection, Result, params};
+use rusqlite::{Connection, params};
 use thiserror::Error;
+
+// Embed migrations from the migrations folder
+embed_migrations!("migrations");
 
 #[derive(Debug, Error)]
 pub enum DatabaseError {
@@ -12,6 +16,8 @@ pub enum DatabaseError {
     Serialization(#[from] serde_json::Error),
     #[error("Item not found: {0}")]
     ItemNotFound(String),
+    #[error("Migration error: {0}")]
+    Migration(#[from] refinery::Error),
 }
 
 /// Game content database backed by SQLite.
@@ -22,38 +28,16 @@ pub struct Database {
 impl Database {
     /// Open or create a database at the given path.
     pub fn open(path: &str) -> Result<Self, DatabaseError> {
-        let conn = Connection::open(path)?;
-        let db = Self { conn };
-        db.init_schema()?;
-        Ok(db)
+        let mut conn = Connection::open(path)?;
+        migrations::runner().run(&mut conn)?;
+        Ok(Self { conn })
     }
 
     /// Create an in-memory database (for testing).
     pub fn in_memory() -> Result<Self, DatabaseError> {
-        let conn = Connection::open_in_memory()?;
-        let db = Self { conn };
-        db.init_schema()?;
-        Ok(db)
-    }
-
-    /// Initialize the database schema.
-    fn init_schema(&self) -> Result<(), DatabaseError> {
-        self.conn.execute_batch(
-            "
-            CREATE TABLE IF NOT EXISTS items (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                item_type TEXT NOT NULL,
-                data TEXT NOT NULL,
-                created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-                updated_at INTEGER NOT NULL DEFAULT (unixepoch())
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_items_type ON items(item_type);
-            CREATE INDEX IF NOT EXISTS idx_items_name ON items(name);
-            "
-        )?;
-        Ok(())
+        let mut conn = Connection::open_in_memory()?;
+        migrations::runner().run(&mut conn)?;
+        Ok(Self { conn })
     }
 
     /// Insert or update an item definition.

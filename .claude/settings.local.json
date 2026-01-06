@@ -24,7 +24,8 @@
       "Bash(cargo test:*)",
       "Bash(bd dep list:*)",
       "Bash(bd search:*)",
-      "Bash(bd dep:*)"
+      "Bash(bd dep:*)",
+      "WebSearch"
     ]
   }
 }
