@@ -1,0 +1,16 @@
+[package]
+name = "roguebench-engine"
+description = "Bevy plugins and systems for Roguebench"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+roguebench-core.workspace = true
+roguebench-protocol.workspace = true
+bevy.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rusqlite.workspace = true
+mlua.workspace = true
+thiserror.workspace = true

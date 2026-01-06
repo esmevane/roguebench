@@ -1,6 +1,43 @@
-[package]
-name = "roguebench"
+[workspace]
+resolver = "2"
+members = [
+    "crates/roguebench-core",
+    "crates/roguebench-protocol",
+    "crates/roguebench-engine",
+    "crates/roguebench-editor",
+    "crates/roguebench-client",
+    "crates/roguebench-server",
+]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/esmevane/roguebench"
 
-[dependencies]
+[workspace.dependencies]
+# Internal crates
+roguebench-core = { path = "crates/roguebench-core" }
+roguebench-protocol = { path = "crates/roguebench-protocol" }
+roguebench-engine = { path = "crates/roguebench-engine" }
+roguebench-editor = { path = "crates/roguebench-editor" }
+
+# Bevy ecosystem
+bevy = "0.15"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Scripting
+mlua = { version = "0.10", features = ["luau", "serialize"] }
+
+# Editor backend
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+
+# Utilities
+thiserror = "2"
