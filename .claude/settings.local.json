@@ -21,7 +21,8 @@
       "Bash(bd close roguebench-4di \"Created 6-crate workspace structure: core, protocol, engine, editor, client, server. All crates build and pass clippy.\")",
       "Bash(bd close roguebench-4di --comment \"Created 6-crate workspace structure: core, protocol, engine, editor, client, server. All crates build and pass clippy.\")",
       "Bash(bd close:*)",
-      "Bash(cargo test:*)"
+      "Bash(cargo test:*)",
+      "Bash(bd dep list:*)"
     ]
   }
 }

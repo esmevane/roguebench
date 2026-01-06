@@ -6,12 +6,14 @@
 use bevy::prelude::*;
 
 pub mod data;
+pub mod editor;
 pub mod items;
 
 pub mod prelude {
     pub use roguebench_core::prelude::*;
 
     pub use crate::data::Database;
+    pub use crate::editor::{EditorPlugin, ItemEditorPlugin};
     pub use crate::items::{
         Item, ItemBundle, ItemPickedUp, ItemRegistry, ItemUsed, ItemsPlugin, Pickup, SpawnItem,
     };

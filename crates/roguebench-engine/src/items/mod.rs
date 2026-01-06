@@ -2,7 +2,7 @@
 
 mod components;
 mod registry;
-mod spawn;
+pub mod spawn;
 
 pub use components::{Item, ItemBundle, ItemPickedUp, ItemUsed, Pickup};
 pub use registry::ItemRegistry;
