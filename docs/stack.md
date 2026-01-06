@@ -22,6 +22,7 @@ Technology choices for this project. This is the "what we use" manifest—agents
 | Dialogue | bevy_yarnspinner | Yarn-based dialogue trees |
 | Input | bevy_enhanced_input | Context-aware input mapping |
 | UI (dev tools) | bevy_egui | Immediate mode UI for tooling |
+| Scripting | mlua | Luau dialect, module-first design |
 
 ## Tooling
 
@@ -30,7 +31,8 @@ Technology choices for this project. This is the "what we use" manifest—agents
 | Issue tracking | beads | Git-native, AI-friendly |
 | AI assistant | Claude Code | With project-specific agents |
 | Editor backend | axum | Embedded web server |
-| Serialization | RON, serde | Rust Object Notation for data files |
+| Content storage | SQLite (rusqlite) | Source of truth for all content |
+| Serialization | bincode, serde | Binary serialization for SQLite blobs |
 
 ## Project Structure
 

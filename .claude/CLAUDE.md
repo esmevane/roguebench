@@ -12,27 +12,52 @@ Before any work, read:
 
 ## Current State
 
-### Phase 0 Blockers (TBDs)
+### Resolved Decisions
 
-These decisions block significant work and must be resolved:
+These Phase 0 decisions have been made:
 
-1. **Scripting Language** — Lua vs Rhai vs WASM (blocks all scripting features)
-2. **Entity Identity** — How entities are identified for persistence/networking
-3. **Content Storage** — File-based vs SQLite vs hybrid
+**Scripting Language → mlua (Luau)**
+- Use `mlua` crate with Luau dialect (sandbox-friendly)
+- Lean heavily on `UserData` trait for Rust-Lua interop
+- Module-first design: scripts export objects with hook handlers
+- Globals namespaced by purpose (e.g., `inventory:player()`)
+
+```lua
+local module = {}
+
+module.recipes = { { itemA = 300 } }
+
+function module.handle_craft(craft_event)
+    inventory:player(craft_event.player.id):addCurrency(craft_event.items[1])
+end
+
+return module
+```
+
+**Entity Identity → SQLite + Lightyear**
+- SQLite for persistence identity (templates, prefabs, save data)
+- Lightyear handles networked entity identity separately
+- Template/prefab identity scheme for editor workflows
+
+**Content Storage → SQLite**
+- SQLite as the source of truth (not RON files)
+- Editor writes directly to SQLite
+- Can store blobs for assets
+- Queries for content management
 
 ### Frameworks Status
 
 | Framework | Status | Blocks |
 |-----------|--------|--------|
-| Command Bus | Partial | Scripting, replay, network sync |
-| Data Pipeline | Partial (rooms only) | Editor integration, new content types |
+| Command Bus | Not started | Scripting hooks, replay, network sync |
+| Data Pipeline | Not started | Editor integration, content loading |
 | Scripting Runtime | Not started | All behavior authoring |
-| State Machine | Ad-hoc | Data-driven enemy AI |
+| State Machine | Not started | Data-driven enemy AI |
 | Persistence | Not started | Save/load |
 
 ### First Vertical Slice
 
-**Recommended:** Items (see docs/build-order.md Phase 2)
+**Target:** Items (see docs/build-order.md Phase 2)
 
 ## Project Structure
 
@@ -75,15 +100,14 @@ pub struct MovementPlugin;
 
 ### Data-Driven Content
 
-Content is defined in RON files, not hardcoded:
+Content is stored in SQLite, not hardcoded:
 ```rust
-// assets/enemies/grunt.ron
-Enemy(
-    name: "Grunt",
-    health: 50,
-    behavior: "patrol",
-)
+// Content loaded from SQLite at runtime
+let enemy_template = db.query_template::<Enemy>("grunt")?;
+// Template has: name, health, behavior, etc.
 ```
+
+Editor UI writes to SQLite, runtime reads from it. Hot reload watches for DB changes.
 
 ## Conventions
 

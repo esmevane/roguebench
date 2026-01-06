@@ -4,60 +4,57 @@ What must exist before what. This isn't a task list—it's a dependency map that
 
 ---
 
-## Phase 0: Resolve Decisions
+## Phase 0: Resolved Decisions
 
-Before implementation can proceed, these decisions must be made. Each blocks significant work.
+These foundational decisions have been made. Reference these when implementing dependent features.
 
-### Scripting Language
+### Scripting Language → mlua (Luau)
 
-**Decision needed:** Lua vs Rhai vs WASM vs other
+**Decision:** Use `mlua` crate with Luau dialect.
 
-**Blocked work:**
-- All scripting features
-- Behavior authoring
-- Event hooks
-- Hot-reload for logic
+**Key points:**
+- Luau for sandbox-friendly scripting
+- Heavy use of `UserData` trait for Rust-Lua interop
+- Module-first design: scripts export objects with hook handlers
+- Globals namespaced by purpose (e.g., `inventory:player()`)
 
-**Considerations:**
-| Option | Pros | Cons |
-|--------|------|------|
-| Lua | Mature, well-known, good Bevy bindings | Heavier runtime |
-| Rhai | Rust-native, simple, good for embedding | Less mature ecosystem |
-| WASM | Language-agnostic, sandboxed | Complex tooling |
+**Script structure:**
+```lua
+local module = {}
 
-**To resolve:** Build a spike with each, evaluate developer experience and performance.
+module.recipes = { { itemA = 300 } }
 
-### Entity Identity
+function module.handle_craft(craft_event)
+    inventory:player(craft_event.player.id):addCurrency(craft_event.items[1])
+end
 
-**Decision needed:** How entities are identified for persistence and networking
+return module
+```
 
-**Blocked work:**
-- Save/load system
-- Cross-session references
-- Networked entity sync
+**Unblocked work:** Scripting runtime, behavior authoring, event hooks, hot-reload for logic.
 
-**Considerations:**
-- UUID: Simple, globally unique, but opaque
-- Incremental: Simple, human-readable, but session-dependent
-- Composite: Meaningful (room:entity:instance), but complex
+### Entity Identity → SQLite + Lightyear
 
-**To resolve:** Examine what Lightyear already provides. Design should complement, not duplicate.
+**Decision:** SQLite for persistence, Lightyear for networking.
 
-### Content Storage
+**Key points:**
+- SQLite stores template/prefab identity for editing
+- Lightyear handles networked entity identity (don't duplicate)
+- Template IDs are stable, instance IDs are session-dependent
 
-**Decision needed:** File-based (RON/JSON) vs SQLite vs hybrid
+**Unblocked work:** Save/load system, cross-session references, editor persistence.
 
-**Blocked work:**
-- Editor persistence
-- Content queries
-- Multi-user editing
+### Content Storage → SQLite
 
-**Considerations:**
-- Files: Simple, git-friendly, limited querying
-- SQLite: Rich queries, transactions, single-file DB
-- Hybrid: Files for version control, DB for runtime
+**Decision:** SQLite as the source of truth.
 
-**To resolve:** Consider multi-user needs. If single-author, files may suffice.
+**Key points:**
+- Editor writes directly to SQLite (not RON files)
+- Rich queries for content management
+- Can store blobs for assets
+- Hot reload watches for DB changes
+
+**Unblocked work:** Editor persistence, content queries, data pipeline.
 
 ---
 
@@ -67,13 +64,11 @@ These must exist before features that depend on them. Order matters—earlier it
 
 ### Command Bus (Foundation)
 
-**Status:** Partially implemented
+**Status:** Not started
 
-**What exists:**
-- Basic SendCommand/CommandExecuted pattern
+**What's needed:**
+- SendCommand/CommandExecuted pattern
 - Command queue and logging
-
-**What's missing:**
 - Validation layer (reject invalid commands)
 - Replay mechanism (playback from log)
 - Hook system (scripts subscribe to commands)
@@ -87,16 +82,14 @@ These must exist before features that depend on them. Order matters—earlier it
 
 ### Data Pipeline
 
-**Status:** Partially implemented (rooms only)
+**Status:** Not started
 
-**What exists:**
-- Room file loading
-- File change detection (hot reload for rooms)
-
-**What's missing:**
+**What's needed:**
+- SQLite connection management
 - Unified loading for all content types
 - Schema validation
 - Version migration
+- Hot reload (watch for DB changes)
 - Integration with editor
 
 **Blocks:**
@@ -104,39 +97,36 @@ These must exist before features that depend on them. Order matters—earlier it
 - New content types
 - Data validation
 
-**Dependency:** Content Storage decision
+**Dependency:** None (Content Storage decision resolved → SQLite)
 
 ### Scripting Runtime
 
 **Status:** Not started
 
-**What exists:** Nothing
-
 **What's needed:**
-- Language runtime integration
-- Safe API surface (what scripts can access)
-- Event hooks (scripts subscribe to game events)
-- Hot-reload for scripts
+- mlua integration with Luau dialect
+- UserData implementations for game types
+- Module loader (scripts return module objects)
+- Hook dispatcher (invoke `handle_*` functions)
+- Global APIs namespaced by purpose
+- Hot-reload for scripts (watch for changes)
 
 **Blocks:**
 - All behavior authoring
 - Dynamic content
 - User-created logic
 
-**Dependency:** Scripting Language decision, Command Bus (hooks)
+**Dependency:** Command Bus (for hook events)
 
 ### State Machine Framework
 
-**Status:** Ad-hoc implementations exist
-
-**What exists:**
-- Enemy AI uses state-like patterns
-- No reusable framework
+**Status:** Not started
 
 **What's needed:**
 - Reusable state machine abstraction
-- Data-driven state definitions
+- Data-driven state definitions (from SQLite)
 - Transition hooks for scripting
+- Bevy integration (component-based)
 
 **Blocks:**
 - Data-driven enemy AI
@@ -149,11 +139,9 @@ These must exist before features that depend on them. Order matters—earlier it
 
 **Status:** Not started
 
-**What exists:** Nothing
-
 **What's needed:**
-- Save slot management
-- Entity serialization
+- Save slot management (SQLite tables)
+- Entity serialization (template ID + instance state)
 - World state capture/restore
 - Checkpoint support
 
@@ -162,7 +150,7 @@ These must exist before features that depend on them. Order matters—earlier it
 - Session resume
 - Progress persistence
 
-**Dependency:** Entity Identity decision, Data Pipeline
+**Dependency:** Data Pipeline (SQLite infrastructure)
 
 ---
 
@@ -179,19 +167,19 @@ Pick ONE content type and build it end-to-end. This validates the entire pipelin
 - Not blocked by state machine or AI
 
 **Slice components:**
-1. **Schema:** Item definition structure
-2. **Editor UI:** Form for item CRUD
-3. **Editor API:** REST endpoints for items
-4. **Data Pipeline:** Load items, hot-reload on change
+1. **Schema:** Item table in SQLite, Rust struct
+2. **Editor UI:** Form for item CRUD (bevy_egui)
+3. **Editor API:** REST endpoints for items (axum)
+4. **Data Pipeline:** Load items from SQLite, hot-reload on change
 5. **Runtime:** Spawn items, pickup handling, effect application
-6. **Persistence:** Save item definitions
+6. **Persistence:** Items stored in SQLite (inherent)
 7. **Verification:** Tests for authoring workflow
 
 **Completion criteria:**
 - User can define item in editor
 - Item spawns in game with correct properties
 - Changes to item hot-reload
-- Item definition persists across restarts
+- Item definition persists across restarts (SQLite)
 
 ---
 
@@ -256,14 +244,8 @@ Only after core content types work end-to-end.
 ## Dependency Graph
 
 ```
-                    ┌─────────────────┐
-                    │ Scripting Lang  │ (Decision)
-                    │    Decision     │
-                    └────────┬────────┘
-                             │
-                             ▼
 ┌──────────────┐    ┌─────────────────┐
-│ Command Bus  │───▶│ Scripting       │
+│ Command Bus  │───▶│ Scripting       │ (mlua/Luau)
 │ (Foundation) │    │ Runtime         │
 └──────┬───────┘    └────────┬────────┘
        │                     │
@@ -278,11 +260,12 @@ Only after core content types work end-to-end.
 ┌──────────────┐    ┌─────────────────┐
 │ Data         │───▶│ Content Types   │
 │ Pipeline     │    │ (Items, etc.)   │
-└──────┬───────┘    └─────────────────┘
+│ (SQLite)     │    └─────────────────┘
+└──────┬───────┘
        │
        │            ┌─────────────────┐
        └───────────▶│ Persistence     │
-                    │                 │
+                    │ (SQLite)        │
                     └─────────────────┘
 
 ┌──────────────┐    ┌─────────────────┐
