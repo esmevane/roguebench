@@ -33,5 +33,5 @@ claude
 5. Bootstrap with agent.
 
 ```
-> Read docs/getting-started.md - I'm starting a new project
+> This is an empty repo - Read docs/getting-started.md and then bootstrap it
 ```

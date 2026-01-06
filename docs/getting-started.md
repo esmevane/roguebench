@@ -39,6 +39,10 @@ How to set up a new project, start a session, and understand the development pro
 
 How to bootstrap a new project with this structure.
 
+### Install beads skill
+
+If `/beads` (preferred, Claude skill) or `bd` (secondary, CLI tool) aren't present, install using: https://github.com/steveyegge/beads/blob/main/docs/INSTALLING.md#claude-code-plugin-optional
+
 ### Repository Structure
 
 ```
