@@ -214,6 +214,14 @@ The agent templates in this doc are generic. Customize their prompts to referenc
 | Project instructions | `./.claude/CLAUDE.md` | This project's specific context |
 | Project rules | `./.claude/rules/*.md` | This project's modular rules |
 
+## Concluding setup
+
+Once you've finished setup, commit your progress:
+
+```sh
+git add . && git commit -m "Setup complete"
+```
+
 ---
 
 ## Session
