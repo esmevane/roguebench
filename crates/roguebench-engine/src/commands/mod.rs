@@ -32,10 +32,12 @@
 mod bus;
 mod events;
 mod log;
+mod validate;
 
 pub use bus::CommandBus;
 pub use events::{CommandEventAppExt, CommandExecuted, ExecutionTimer};
 pub use log::{CommandLog, CommandLogAppExt, LogEntry, ReplayIterator};
+pub use validate::{FnValidator, Validator, ValidatorAppExt, Validators};
 
 // Re-export core types for convenience
 pub use roguebench_core::commands::{

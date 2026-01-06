@@ -15,7 +15,8 @@ pub mod prelude {
 
     pub use crate::commands::{
         CommandBus, CommandBusAppExt, CommandBusPlugin, CommandEventAppExt, CommandExecuted,
-        CommandLog, CommandLogAppExt, ExecutionTimer, FrameCount, LogEntry,
+        CommandLog, CommandLogAppExt, ExecutionTimer, FrameCount, LogEntry, Validator,
+        ValidatorAppExt, Validators,
     };
     pub use crate::data::Database;
     pub use crate::editor::{EditorPlugin, ItemEditorPlugin};
