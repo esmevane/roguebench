@@ -4,7 +4,14 @@
       "Skill(beads:init)",
       "Bash(bd init:*)",
       "Bash(bd stats:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(bd create:*)",
+      "Bash(bd dep add:*)",
+      "Bash(bd list:*)",
+      "Bash(bd ready:*)",
+      "Bash(bd sync:*)",
+      "Bash(git:*)",
+      "Bash(cat:*)"
     ]
   }
 }
