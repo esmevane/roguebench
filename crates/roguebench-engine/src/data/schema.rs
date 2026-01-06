@@ -2,6 +2,7 @@
 
 use refinery::embed_migrations;
 use roguebench_core::items::{ItemDefinition, ItemId};
+use roguebench_core::state_machine::StateMachineDefinition;
 use rusqlite::{Connection, params};
 use thiserror::Error;
 
@@ -102,6 +103,82 @@ impl Database {
     pub fn count_items(&self) -> Result<usize, DatabaseError> {
         let count: i64 = self.conn.query_row(
             "SELECT COUNT(*) FROM items",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(count as usize)
+    }
+
+    // --- State Machine Operations ---
+
+    /// Insert or update a state machine definition.
+    pub fn upsert_state_machine(
+        &self,
+        machine: &StateMachineDefinition,
+    ) -> Result<(), DatabaseError> {
+        let data = serde_json::to_string(machine)?;
+
+        self.conn.execute(
+            "INSERT INTO state_machines (id, name, initial_state, data, updated_at)
+             VALUES (?1, ?2, ?3, ?4, unixepoch())
+             ON CONFLICT(id) DO UPDATE SET
+                name = excluded.name,
+                initial_state = excluded.initial_state,
+                data = excluded.data,
+                updated_at = unixepoch()",
+            params![machine.id, machine.name, machine.initial_state.0, data],
+        )?;
+        Ok(())
+    }
+
+    /// Get a state machine definition by ID.
+    pub fn get_state_machine(&self, id: &str) -> Result<StateMachineDefinition, DatabaseError> {
+        let data: String = self
+            .conn
+            .query_row(
+                "SELECT data FROM state_machines WHERE id = ?1",
+                params![id],
+                |row| row.get(0),
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    DatabaseError::ItemNotFound(format!("State machine not found: {}", id))
+                }
+                other => DatabaseError::Sqlite(other),
+            })?;
+
+        let machine: StateMachineDefinition = serde_json::from_str(&data)?;
+        Ok(machine)
+    }
+
+    /// Get all state machine definitions.
+    pub fn get_all_state_machines(&self) -> Result<Vec<StateMachineDefinition>, DatabaseError> {
+        let mut stmt = self.conn.prepare("SELECT data FROM state_machines")?;
+        let machines = stmt.query_map([], |row| {
+            let data: String = row.get(0)?;
+            Ok(data)
+        })?;
+
+        let mut result = Vec::new();
+        for data in machines {
+            let machine: StateMachineDefinition = serde_json::from_str(&data?)?;
+            result.push(machine);
+        }
+        Ok(result)
+    }
+
+    /// Delete a state machine by ID.
+    pub fn delete_state_machine(&self, id: &str) -> Result<bool, DatabaseError> {
+        let affected = self
+            .conn
+            .execute("DELETE FROM state_machines WHERE id = ?1", params![id])?;
+        Ok(affected > 0)
+    }
+
+    /// Count total state machines in database.
+    pub fn count_state_machines(&self) -> Result<usize, DatabaseError> {
+        let count: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM state_machines",
             [],
             |row| row.get(0),
         )?;

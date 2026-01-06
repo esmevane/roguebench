@@ -10,7 +10,7 @@ mod watcher;
 pub use content::{
     ChangeType, ContentAppExt, ContentChanged, ContentRegistry, ContentType, LoadError,
 };
-pub use schema::Database;
+pub use schema::{Database, DatabaseError};
 pub use watcher::{
     ContentWatcher, ContentWatcherAppExt, ContentWatcherPlugin, FileChanged, WatchError,
 };

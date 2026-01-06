@@ -6,6 +6,37 @@ Precise definitions for terms used throughout this project. When these terms app
 
 ## Architectural Terms
 
+### Walking Skeleton
+
+The thinnest possible end-to-end implementation of a workflow.
+
+**Purpose:**
+- Proves the integration path works before investing in depth
+- Exposes missing pieces and wrong assumptions early
+- Creates a working system that can be fleshed out incrementally
+
+**Characteristics:**
+- Touches all layers (editor → API → storage → runtime)
+- Does one thing, poorly but completely
+- Is ugly, minimal, maybe hardcoded
+- Actually runs and can be demonstrated
+
+**Example walking skeleton:** "Author creates enemy that appears in game"
+- Editor: Single text field for enemy name
+- API: One POST endpoint, minimal validation
+- Storage: One row in SQLite
+- Runtime: Spawn a colored rectangle with a label
+- Hot reload: Change name → rectangle label updates
+
+**Not a skeleton:** Building the full enemy form, then the full API, then the full runtime. That's horizontal layers, not a skeleton.
+
+**Process:**
+1. Identify the workflow to prove
+2. Build the thinnest path through all layers
+3. Verify it works end-to-end
+4. Flesh out each layer incrementally
+5. Each increment should still work end-to-end
+
 ### Vertical Slice
 
 A complete path through all system layers for one capability.

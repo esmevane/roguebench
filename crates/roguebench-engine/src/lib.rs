@@ -9,6 +9,8 @@ pub mod commands;
 pub mod data;
 pub mod editor;
 pub mod items;
+pub mod scripting;
+pub mod state_machine;
 
 pub mod prelude {
     pub use roguebench_core::prelude::*;
@@ -22,6 +24,10 @@ pub mod prelude {
     pub use crate::editor::{EditorPlugin, ItemEditorPlugin};
     pub use crate::items::{
         Item, ItemBundle, ItemPickedUp, ItemRegistry, ItemUsed, ItemsPlugin, Pickup, SpawnItem,
+    };
+    pub use crate::scripting::{ScriptError, ScriptRuntime, ScriptingPlugin};
+    pub use crate::state_machine::{
+        StateMachine, StateMachineBundle, StateMachinePlugin, StateChanged,
     };
 }
 

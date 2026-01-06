@@ -4,11 +4,41 @@ How users accomplish tasks in the workbench. Each workflow describes the user jo
 
 ---
 
+## Skeleton-First Approach
+
+**Every workflow should be built as a walking skeleton first.**
+
+Before fleshing out any workflow, build the thinnest possible end-to-end version:
+
+1. **Identify the core loop** — What's the simplest version of "user does X → sees Y"?
+2. **Stub every layer** — Editor (one field), API (one endpoint), Storage (one table), Runtime (one visible result)
+3. **Prove the path** — Can you demonstrate the workflow working, even if ugly?
+4. **Then flesh out** — Add fields, validation, polish—but keep it working at each step
+
+**Why skeleton-first:**
+- Exposes integration issues immediately (not after building rich layers)
+- Validates assumptions about how layers connect
+- Creates a working system from day one
+- Each increment is demonstrable progress
+
+**Anti-pattern:** Building the "full" editor UI, then the "full" API, then the "full" runtime. This hides integration problems until the end and produces nothing usable until everything is done.
+
+---
+
 ## Content Authoring Workflows
 
 ### Create a New Enemy Type
 
-**User Journey:**
+**Walking Skeleton:**
+```
+Editor: Text field for name, number field for health
+API: POST /api/enemies { name, health }
+Storage: INSERT INTO enemies (id, name, health)
+Runtime: Spawn colored rectangle with name label and health number
+Hot reload: Change health → number updates on rectangle
+```
+
+**User Journey (full version):**
 1. Open editor in browser (localhost:8080)
 2. Navigate to Enemies → New
 3. Fill form with stats and behavior
@@ -55,7 +85,16 @@ Editor UI
 
 ### Create a Room Layout
 
-**User Journey:**
+**Walking Skeleton:**
+```
+Editor: 8x8 grid, click to toggle wall/floor
+API: POST /api/rooms { tiles: [[0,1,1,...], ...] }
+Storage: INSERT INTO rooms (id, tiles_json)
+Runtime: Render grid of colored squares (brown=wall, gray=floor)
+Hot reload: Change tile → square color updates
+```
+
+**User Journey (full version):**
 1. Open editor in browser
 2. Navigate to Rooms → New
 3. Set room dimensions
@@ -102,7 +141,16 @@ Editor UI (click tiles)
 
 ### Script a Simple Behavior
 
-**User Journey:**
+**Walking Skeleton:**
+```
+Editor: Textarea for Lua code
+API: POST /api/scripts { name, code }
+Storage: INSERT INTO scripts (id, code)
+Runtime: Script's on_spawn() prints to console when enemy spawns
+Hot reload: Change script → re-run on_spawn() for existing entities
+```
+
+**User Journey (full version):**
 1. Open editor in browser
 2. Navigate to Scripts → New
 3. Write script (or copy/modify example)
@@ -155,7 +203,16 @@ Editor UI (text input)
 
 ### Define a New Item
 
-**User Journey:**
+**Walking Skeleton:**
+```
+Editor: Text field for name, dropdown for type (weapon/consumable/key)
+API: POST /api/items { name, type }
+Storage: INSERT INTO items (id, name, type)
+Runtime: Spawn colored sprite based on type, show name on hover
+Hot reload: Change name → hover text updates
+```
+
+**User Journey (full version):**
 1. Open editor in browser
 2. Navigate to Items → New
 3. Fill form with item properties
@@ -234,16 +291,19 @@ This is a vertical slice. Don't start the next content type until this one works
 
 ### Add a New Framework
 
-**Process:**
-1. Identify the need (multiple features want similar infrastructure)
-2. Design the interface (what does it expose, what does it hide)
-3. Build minimal implementation
-4. Migrate one existing feature to use it
-5. Verify it works
-6. Migrate remaining features
-7. Document the framework
+**When:**
+- Known pattern with a concrete first consumer, OR
+- Pattern emerges from 2-3 similar implementations
 
-Frameworks should emerge from need, not be built speculatively.
+**Process:**
+1. Identify the consumer (what workflow will use this?)
+2. Design the interface alongside that consumer
+3. Build minimal implementation
+4. Prove it works in the consumer workflow
+5. If extracting: migrate remaining features
+6. Document the framework
+
+Build frameworks with consumers, not in isolation. See `docs/approach.md` for details.
 
 ### Debug an Issue
 

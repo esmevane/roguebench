@@ -6,58 +6,31 @@ A game workbench for collaborative roguelike creation with non-programmers.
 
 Before any work, read:
 - docs/mission.md — Understand the goal (authoring tools, not a game)
-- docs/glossary.md — Understand the terms (vertical slice, framework, TBD, deferral)
-- docs/priorities.md — Understand how to prioritize (resolve decisions, frameworks before features, vertical over horizontal)
-- docs/build-order.md — Understand dependencies and current blockers
+- docs/glossary.md — Understand the terms (walking skeleton, workflow, TBD, deferral)
+- docs/approach.md — Understand how to work (workflows first, skeleton-then-flesh)
+- docs/priorities.md — Understand how to prioritize decisions
 
 ## Current State
 
 ### Resolved Decisions
 
-These Phase 0 decisions have been made:
+See `docs/decisions/` for full rationale:
+- **Scripting** → mlua with Luau (docs/decisions/scripting.md)
+- **Storage** → SQLite (docs/decisions/storage.md)
+- **Networking** → Lightyear (docs/decisions/networking.md)
 
-**Scripting Language → mlua (Luau)**
-- Use `mlua` crate with Luau dialect (sandbox-friendly)
-- Lean heavily on `UserData` trait for Rust-Lua interop
-- Module-first design: scripts export objects with hook handlers
-- Globals namespaced by purpose (e.g., `inventory:player()`)
+### Proven Patterns
 
-```lua
-local module = {}
+See `docs/patterns/` for details:
+- **Command Bus** — Game mutations with logging/replay/scripting
+- **Content Registry** — Loading authored content from SQLite
+- **State Machine** — Data-driven entity behaviors
 
-module.recipes = { { itemA = 300 } }
+### Development Approach
 
-function module.handle_craft(craft_event)
-    inventory:player(craft_event.player.id):addCurrency(craft_event.items[1])
-end
+**Workflows first, not frameworks.** Build thin vertical slices end-to-end, then flesh out.
 
-return module
-```
-
-**Entity Identity → SQLite + Lightyear**
-- SQLite for persistence identity (templates, prefabs, save data)
-- Lightyear handles networked entity identity separately
-- Template/prefab identity scheme for editor workflows
-
-**Content Storage → SQLite**
-- SQLite as the source of truth (not RON files)
-- Editor writes directly to SQLite
-- Can store blobs for assets
-- Queries for content management
-
-### Frameworks Status
-
-| Framework | Status | Blocks |
-|-----------|--------|--------|
-| Command Bus | Not started | Scripting hooks, replay, network sync |
-| Data Pipeline | Not started | Editor integration, content loading |
-| Scripting Runtime | Not started | All behavior authoring |
-| State Machine | Not started | Data-driven enemy AI |
-| Persistence | Not started | Save/load |
-
-### First Vertical Slice
-
-**Target:** Items (see docs/build-order.md Phase 2)
+See `docs/approach.md` for the full methodology.
 
 ## Project Structure
 

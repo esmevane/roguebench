@@ -25,7 +25,8 @@
       "Bash(bd dep list:*)",
       "Bash(bd search:*)",
       "Bash(bd dep:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(grep:*)"
     ]
   }
 }

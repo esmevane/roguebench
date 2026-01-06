@@ -60,7 +60,7 @@ project/
 |---------|---------------|-----------|
 | Command bus | `SendCommand<C>` / `CommandExecuted<C>` | See glossary: Framework |
 | Message-driven | Bevy events + observers | See CLAUDE.md: Bevy patterns |
-| Hot reload | File watching + data pipeline | See build-order: Data Pipeline |
+| Hot reload | File watching + data pipeline | See patterns/content-registry.md |
 | Plugin architecture | One concept = one plugin | See CLAUDE.md: Bevy code |
 
 ## Conventions

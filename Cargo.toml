@@ -35,7 +35,7 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 refinery = { version = "0.8", features = ["rusqlite"] }
 
 # Scripting
-mlua = { version = "0.10", features = ["luau", "serialize"] }
+mlua = { version = "0.10", features = ["luau", "serialize", "send"] }
 
 # Editor backend
 axum = "0.8"

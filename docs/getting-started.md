@@ -57,7 +57,7 @@ project/
 │   ├── glossary.md            # Terms of art
 │   ├── workflows.md           # How users accomplish tasks
 │   ├── priorities.md          # Decision framework
-│   ├── build-order.md         # Dependencies and phases
+│   ├── approach.md            # Workflow-first development
 │   ├── roles.md               # Agent/team structure
 │   └── getting-started.md     # This file
 └── src/                       # Implementation
@@ -83,7 +83,34 @@ Claude Code loads instructions from multiple sources (combined, not overridden):
 
 ### Bootstrapping Agents
 
-Create `.claude/agents/` directory with specialized agents:
+Create `.claude/agents/` directory with specialized agents. See `docs/agents/` for full specs.
+
+#### Core Agents (Always Present)
+
+| Agent | Purpose | See |
+|-------|---------|-----|
+| **mission-lead** | Direction and alignment with goals | docs/agents/ or below |
+| **test-designer** | Outside-in test design | docs/agents/ or below |
+| **architect** | Pattern observation and structure | docs/agents/ or below |
+
+#### Quality Agents (For Self-Review)
+
+| Agent | Purpose | Spec |
+|-------|---------|------|
+| **organizer** | Code organization and naming | docs/agents/organizer.md |
+| **custodian** | Technical debt and code health | docs/agents/custodian.md |
+| **alignment** | Workflow and decision consistency | docs/agents/alignment.md |
+| **best-practices** | SOLID, hexagonal, component design | docs/agents/best-practices.md |
+| **deferral-guard** | Prevent stubs and deferrals | docs/agents/deferral-guard.md |
+
+#### Skills
+
+| Skill | Purpose | Spec |
+|-------|---------|------|
+| **memory** | Persistent context across sessions | docs/agents/memory.md |
+| **self-review** | Quality verification with rule of five | docs/agents/self-review.md |
+
+#### Agent Definitions
 
 **mission-lead.md** — Direction and alignment
 ```markdown
@@ -181,7 +208,7 @@ To use this documentation structure for a new project:
 | `mission.md` | Goal, users, success criteria, reference points |
 | `stack.md` | Language, framework, dependencies, project structure |
 | `workflows.md` | Your project's authoring workflows |
-| `build-order.md` | Your project's dependencies and phases |
+| `approach.md` | Your project's workflow-first methodology |
 | `getting-started.md` | Project-specific commands, tracking tools |
 
 **3. Create project-specific `.claude/CLAUDE.md`:**
@@ -240,44 +267,62 @@ How to start a development session.
    claude
    > /beads:ready              # What's unblocked?
    > /beads:list --status open # What's in progress?
+   > /memory:recall --recent   # What did we decide/learn?
    ```
 
-3. **Consult mission-lead**
+3. **Quick self-review** (verify context)
+   ```
+   > /self-review --quick
+   ```
+
+4. **Consult mission-lead**
    ```
    > Use mission-lead to assess current priorities given recent changes
    ```
 
-4. **Identify work item**
+5. **Identify work item**
    - Pick from ready issues, or
    - Identify emergent need from mission-lead assessment
 
-5. **Verify dependencies**
-   - Check docs/build-order.md
-   - Ensure prerequisites are met
-   - If blocked, work on blocker instead
+6. **Verify workflow alignment**
+   - Which workflow does this serve?
+   - Is there a walking skeleton to build/extend?
+   - If blocked, address blocker instead
 
-6. **Begin work**
+7. **Begin work**
    - Start with test or spike as appropriate
    - Use domain agent if available
    - Track progress with beads
+   - Watch for deferral signals
 
 ### Session End Checklist
 
-1. **Commit work**
+1. **Self-review before commit**
+   ```
+   > /self-review
+   ```
+   - Run full review for significant work
+   - Rule of five for milestones
+   - Fix critical/high issues before committing
+
+2. **Commit work**
    - Ensure tests pass
    - Commit with meaningful message
    - Reference issue ID in commit
 
-2. **Update tracking**
+3. **Update tracking and memory**
    ```
    > /beads:update {id} --status {status}
    > /beads:sync --message "description of work"
+   > /memory:remember decision "..."   # Record key decisions
+   > /memory:remember observation "..."  # Record learnings
    ```
 
-3. **Note context for next session**
+4. **Note context for next session**
    - What's in progress?
    - What's blocked?
    - What decisions are pending?
+   - What did we learn?
 
 ---
 
@@ -410,7 +455,7 @@ When blocked:
 | docs/glossary.md | Term definitions |
 | docs/workflows.md | How users accomplish tasks |
 | docs/priorities.md | Decision framework |
-| docs/build-order.md | Dependencies and phases |
+| docs/approach.md | Workflow-first methodology |
 | docs/roles.md | Agent/team structure |
 
 ### Key Commands
@@ -437,7 +482,7 @@ Use {agent} to {task}           # Invoke agent
 ### Key Questions
 
 - **Priority:** "What should I work on next?" → See priorities.md
-- **Blocked:** "This needs X first" → See build-order.md
+- **Blocked:** "This needs X first" → See approach.md
 - **Unclear term:** "What does Y mean?" → See glossary.md
 - **User need:** "How does user do Z?" → See workflows.md
 - **Direction:** "Is this the right approach?" → Consult mission-lead

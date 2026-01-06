@@ -37,16 +37,16 @@ When evaluating work, apply in order:
 4. **User capability over technical elegance** — Does this help someone create content?
 5. **Smallest testable increment** — How would we know this works?
 
-## Current Blockers (Phase 0)
+## Resolved Decisions
 
-These TBDs block significant work:
-- Scripting Language (Lua vs Rhai vs WASM)
-- Entity Identity (how entities are identified for persistence/networking)
-- Content Storage (file-based vs SQLite vs hybrid)
+These foundational decisions have been made (see docs/decisions/):
+- **Scripting** → mlua with Luau
+- **Storage** → SQLite
+- **Networking** → Lightyear
 
 ## When Consulted
 
-- Start by reading the relevant docs (mission, priorities, build-order)
+- Start by reading the relevant docs (mission, priorities, approach)
 - Reference specific sections when explaining reasoning
 - Be pragmatic — surface issues for human decision rather than enforcing rules
 - If work seems misaligned, explain why and offer alternatives
