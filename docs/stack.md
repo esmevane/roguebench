@@ -40,12 +40,12 @@ Technology choices for this project. This is the "what we use" manifest—agents
 project/
 ├── Cargo.toml              # Workspace manifest
 ├── crates/
-│   ├── {name}-core/        # Platform-agnostic types (no Bevy)
-│   ├── {name}-protocol/    # Network protocol, shared components
-│   ├── {name}-engine/      # Bevy plugins and systems
-│   ├── {name}-editor/      # Web editor backend
-│   ├── {name}-client/      # Game client binary
-│   └── {name}-server/      # Game server binary
+│   ├── roguebench-core/        # Platform-agnostic types (no Bevy)
+│   ├── roguebench-protocol/    # Network protocol, shared components
+│   ├── roguebench-engine/      # Bevy plugins and systems
+│   ├── roguebench-editor/      # Web editor backend
+│   ├── roguebench-client/      # Game client binary
+│   └── roguebench-server/      # Game server binary
 ├── assets/                 # Game assets (sprites, audio, data)
 ├── docs/                   # Project documentation
 └── .claude/                # Claude Code configuration
@@ -69,7 +69,7 @@ project/
 
 | Thing | Convention | Example |
 |-------|------------|---------|
-| Crates | `{project}-{layer}` | `glumglade-engine` |
+| Crates | `roguebench-{layer}` | `roguebench-engine` |
 | Plugins | `{Feature}Plugin` | `CombatPlugin` |
 | Components | PascalCase noun | `Health`, `Movement` |
 | Systems | snake_case verb | `apply_damage`, `spawn_enemy` |
@@ -79,9 +79,9 @@ project/
 
 | Layer | Location | Contents |
 |-------|----------|----------|
-| Types (no Bevy) | `{name}-core/` | Pure data structures |
-| Shared components | `{name}-protocol/` | Replicated components, messages |
-| Game logic | `{name}-engine/src/` | Plugins, systems, behaviors |
+| Types (no Bevy) | `roguebench-core/` | Pure data structures |
+| Shared components | `roguebench-protocol/` | Replicated components, messages |
+| Game logic | `roguebench-engine/src/` | Plugins, systems, behaviors |
 | Content | `assets/` | RON files, sprites, audio |
 
 ## Commands
@@ -94,12 +94,12 @@ cargo build                    # Debug build
 cargo build --release          # Release build
 
 # Run
-cargo run -p {name}-client     # Run game client
-cargo run -p {name}-server     # Run game server
+cargo run -p roguebench-client     # Run game client
+cargo run -p roguebench-server     # Run game server
 
 # Test
-cargo test                     # Run all tests
-cargo test -p {name}-engine    # Test specific crate
+cargo test                         # Run all tests
+cargo test -p roguebench-engine    # Test specific crate
 
 # Check
 cargo check                    # Type check without building
