@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(beads:init)",
+      "Bash(beads init:*)",
+      "Bash(npx beads:*)",
+      "Bash(cargo install:*)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "Bash(curl:*)",
+      "Bash(bash)",
+      "Bash(~/.local/bin/bd init:*)",
+      "Bash(~/.local/bin/bd doctor:*)",
+      "Bash(~/.local/bin/bd hooks install:*)",
+      "Bash(~/.local/bin/bd daemons killall)",
+      "Bash(~/.local/bin/bd ready:*)",
+      "Bash(~/.local/bin/bd stats:*)",
+      "Bash(echo:*)"
+    ]
+  }
+}
