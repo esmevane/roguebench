@@ -40,5 +40,9 @@ mlua = { version = "0.10", features = ["luau", "serialize"] }
 axum = "0.8"
 tokio = { version = "1", features = ["full"] }
 
+# File watching
+notify = "7"
+notify-debouncer-mini = "0.5"
+
 # Utilities
 thiserror = "2"
