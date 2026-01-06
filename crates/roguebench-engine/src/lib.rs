@@ -5,6 +5,7 @@
 
 use bevy::prelude::*;
 
+pub mod commands;
 pub mod data;
 pub mod editor;
 pub mod items;
@@ -12,6 +13,10 @@ pub mod items;
 pub mod prelude {
     pub use roguebench_core::prelude::*;
 
+    pub use crate::commands::{
+        CommandBus, CommandBusAppExt, CommandBusPlugin, CommandEventAppExt, CommandExecuted,
+        CommandLog, CommandLogAppExt, ExecutionTimer, FrameCount, LogEntry,
+    };
     pub use crate::data::Database;
     pub use crate::editor::{EditorPlugin, ItemEditorPlugin};
     pub use crate::items::{
