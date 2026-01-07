@@ -1,6 +1,36 @@
-[package]
-name = "roguebench"
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
 repository = "https://github.com/esmevane/roguebench"
 license = "UNLICENSED"
+
+[workspace.dependencies]
+# Internal crates
+roguebench-core = { path = "crates/roguebench-core" }
+
+# Bevy ecosystem
+bevy = "0.17"
+# lightyear = "0.25"  # Add when networking needed
+
+# Web server
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["cors", "fs"] }
+
+# Database
+rusqlite = { version = "0.35", features = ["bundled"] }
+rusqlite_migration = "2.1"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Utilities
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4", "serde"] }

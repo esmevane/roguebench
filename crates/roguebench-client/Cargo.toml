@@ -1,0 +1,16 @@
+[package]
+name = "roguebench-client"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "roguebench-client"
+path = "src/main.rs"
+
+[dependencies]
+roguebench-core = { workspace = true }
+bevy = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

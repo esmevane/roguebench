@@ -2,3 +2,6 @@
 /tmp
 .claude/settings.local.json
 .claude/memory.db
+
+# Runtime database
+*.db

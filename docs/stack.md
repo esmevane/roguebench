@@ -21,7 +21,7 @@ Technology choices for this project. This is the "what we use" manifest—agents
 | Physics | Avian 2D | 2D collision and rigidbodies |
 | Dialogue | bevy_yarnspinner | Yarn-based dialogue trees |
 | Input | bevy_enhanced_input | Context-aware input mapping |
-| UI (dev tools) | bevy_egui | Immediate mode UI for tooling |
+| Dev console | bevy_egui | In-game dev tools (client-side) |
 | Scripting | mlua | Luau dialect, module-first design |
 
 ## Tooling
@@ -30,7 +30,7 @@ Technology choices for this project. This is the "what we use" manifest—agents
 |--------|-------|-------|
 | Issue tracking | beads | Git-native, AI-friendly |
 | AI assistant | Claude Code | With project-specific agents |
-| Editor backend | axum | Embedded web server |
+| Web editor | axum | Embedded in game server, serves HTML forms |
 | Content storage | SQLite (rusqlite) | Source of truth for all content |
 | Serialization | bincode, serde | Binary serialization for SQLite blobs |
 
@@ -53,6 +53,27 @@ project/
     ├── agents/             # Specialized agents
     └── rules/              # Modular rules
 ```
+
+## Architecture
+
+### Server (roguebench-server)
+
+The game server serves two purposes:
+1. **Web Editor**: axum serves HTML forms at `localhost:8080` for content authoring
+2. **Game Server**: Bevy runs headless, manages authoritative game state, Lightyear replicates to clients
+
+The editor writes directly to SQLite. The game server reads from SQLite and hot-reloads when content changes.
+
+### Client (roguebench-client)
+
+The game client:
+1. **Renders**: Bevy with sprites, particles, UI
+2. **Connects**: Lightyear client connects to server for game state
+3. **Dev Console**: bevy_egui provides in-game debugging tools (not the content editor)
+
+Authors use their browser for the web editor. Players use the game client to play.
+
+---
 
 ## Key Patterns
 
