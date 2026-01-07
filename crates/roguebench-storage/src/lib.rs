@@ -59,7 +59,7 @@ mod tests {
         assert!(entities.is_empty());
 
         // Save an entity
-        let entity = EntityDef::new("Goblin");
+        let entity = EntityDef::new("Goblin", 30);
         store.save_entity(&entity).unwrap();
 
         // Load and verify
@@ -67,23 +67,26 @@ mod tests {
         assert_eq!(loaded.len(), 1);
         assert_eq!(loaded[0].id, entity.id);
         assert_eq!(loaded[0].name, entity.name);
+        assert_eq!(loaded[0].health, 30);
 
         // Save another
-        let entity2 = EntityDef::new("Orc");
+        let entity2 = EntityDef::new("Orc", 80);
         store.save_entity(&entity2).unwrap();
 
         let loaded = store.load_entities().unwrap();
         assert_eq!(loaded.len(), 2);
 
-        // Update existing (same ID, different name)
+        // Update existing (same ID, different name and health)
         let mut updated = entity.clone();
         updated.name = "Goblin King".to_string();
+        updated.health = 150;
         store.save_entity(&updated).unwrap();
 
         let loaded = store.load_entities().unwrap();
         assert_eq!(loaded.len(), 2);
         let goblin = loaded.iter().find(|e| e.id == entity.id).unwrap();
         assert_eq!(goblin.name, "Goblin King");
+        assert_eq!(goblin.health, 150);
 
         // Delete
         store.delete_entity(entity.id).unwrap();

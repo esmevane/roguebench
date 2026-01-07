@@ -46,10 +46,13 @@ impl SqliteStore {
         conn.execute(
             "CREATE TABLE IF NOT EXISTS entities (
                 id TEXT PRIMARY KEY,
-                name TEXT NOT NULL
+                name TEXT NOT NULL,
+                health INTEGER NOT NULL DEFAULT 100
             )",
             [],
         )?;
+        // Migration: add health column if it doesn't exist (for existing databases)
+        let _ = conn.execute("ALTER TABLE entities ADD COLUMN health INTEGER NOT NULL DEFAULT 100", []);
         Ok(())
     }
 }
@@ -57,21 +60,22 @@ impl SqliteStore {
 impl ContentStore for SqliteStore {
     fn load_entities(&self) -> Result<Vec<EntityDef>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT id, name FROM entities")?;
+        let mut stmt = conn.prepare("SELECT id, name, health FROM entities")?;
 
         let mut entities = Vec::new();
         let rows = stmt.query_map([], |row| {
             let id: String = row.get(0)?;
             let name: String = row.get(1)?;
-            Ok((id, name))
+            let health: i32 = row.get(2)?;
+            Ok((id, name, health))
         })?;
 
         for row_result in rows {
-            let (id_str, name) = row_result?;
+            let (id_str, name, health) = row_result?;
             let id = id_str
                 .parse()
                 .map_err(|_| StorageError::InvalidUuid(id_str.clone()))?;
-            entities.push(EntityDef { id, name });
+            entities.push(EntityDef { id, name, health });
         }
 
         Ok(entities)
@@ -80,8 +84,8 @@ impl ContentStore for SqliteStore {
     fn save_entity(&self, entity: &EntityDef) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            "INSERT OR REPLACE INTO entities (id, name) VALUES (?1, ?2)",
-            [&entity.id.to_string(), &entity.name],
+            "INSERT OR REPLACE INTO entities (id, name, health) VALUES (?1, ?2, ?3)",
+            rusqlite::params![&entity.id.to_string(), &entity.name, entity.health],
         )?;
         Ok(())
     }

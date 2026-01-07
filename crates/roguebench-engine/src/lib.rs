@@ -80,7 +80,7 @@ pub mod prelude {
 mod tests {
     use super::*;
     use roguebench_core::EntityDef;
-    use roguebench_protocol::EntityName;
+    use roguebench_protocol::{EntityName, Health};
     use roguebench_storage::MemoryStore;
     use systems::{ReloadEntities, SpawnedEntity};
 
@@ -111,8 +111,8 @@ mod tests {
         let storage = Arc::new(MemoryStore::new());
 
         // Pre-populate storage
-        let goblin = EntityDef::new("Goblin");
-        let orc = EntityDef::new("Orc");
+        let goblin = EntityDef::new("Goblin", 30);
+        let orc = EntityDef::new("Orc", 80);
         storage.save_entity(&goblin).unwrap();
         storage.save_entity(&orc).unwrap();
 
@@ -122,16 +122,21 @@ mod tests {
         app.world_mut().commands().trigger(ReloadEntities);
         app.update();
 
-        // Verify entities were spawned
-        let mut query = app.world_mut().query::<(&SpawnedEntity, &EntityName)>();
-        let names: Vec<String> = query
+        // Verify entities were spawned with correct names and health
+        let mut query = app
+            .world_mut()
+            .query::<(&SpawnedEntity, &EntityName, &Health)>();
+        let entities: Vec<(String, i32)> = query
             .iter(app.world())
-            .map(|(_, name)| name.0.clone())
+            .map(|(_, name, health)| (name.0.clone(), health.0))
             .collect();
 
-        assert_eq!(names.len(), 2);
-        assert!(names.contains(&"Goblin".to_string()));
-        assert!(names.contains(&"Orc".to_string()));
+        assert_eq!(entities.len(), 2);
+
+        let goblin_entity = entities.iter().find(|(n, _)| n == "Goblin").unwrap();
+        let orc_entity = entities.iter().find(|(n, _)| n == "Orc").unwrap();
+        assert_eq!(goblin_entity.1, 30);
+        assert_eq!(orc_entity.1, 80);
     }
 
     #[test]
@@ -139,7 +144,7 @@ mod tests {
         let storage = Arc::new(MemoryStore::new());
 
         // Pre-populate with one entity
-        let goblin = EntityDef::new("Goblin");
+        let goblin = EntityDef::new("Goblin", 30);
         storage.save_entity(&goblin).unwrap();
 
         let (mut app, _tx) = test_app(storage.clone());
@@ -153,7 +158,7 @@ mod tests {
         assert_eq!(count, 1);
 
         // Add another entity to storage
-        let orc = EntityDef::new("Orc");
+        let orc = EntityDef::new("Orc", 80);
         storage.save_entity(&orc).unwrap();
 
         // Second reload should despawn old and spawn both
@@ -176,7 +181,7 @@ mod tests {
         let storage = Arc::new(MemoryStore::new());
 
         // Pre-populate with entity
-        let goblin = EntityDef::new("Goblin");
+        let goblin = EntityDef::new("Goblin", 50);
         storage.save_entity(&goblin).unwrap();
 
         let (mut app, tx) = test_app(storage);

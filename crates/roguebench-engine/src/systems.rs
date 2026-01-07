@@ -5,7 +5,7 @@ use lightyear::prelude::server::{
     NetcodeConfig, NetcodeServer, ServerUdpIo, Start as LightyearStart,
 };
 use lightyear::prelude::{Link, LocalAddr, Replicate};
-use roguebench_protocol::{EditorMessage, EntityName};
+use roguebench_protocol::{EditorMessage, EntityName, Health};
 
 use crate::resources::{EditorReceiver, ServerAddr, Storage};
 
@@ -66,8 +66,17 @@ pub fn reload_entities(
     match storage.0.load_entities() {
         Ok(entities) => {
             for entity_def in entities {
-                tracing::info!("Spawning entity: {}", entity_def.name);
-                commands.spawn((SpawnedEntity, EntityName(entity_def.name), Replicate::default()));
+                tracing::info!(
+                    "Spawning entity: {} (health: {})",
+                    entity_def.name,
+                    entity_def.health
+                );
+                commands.spawn((
+                    SpawnedEntity,
+                    EntityName(entity_def.name),
+                    Health(entity_def.health),
+                    Replicate::default(),
+                ));
             }
         }
         Err(e) => {

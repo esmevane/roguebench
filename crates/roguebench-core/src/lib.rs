@@ -13,13 +13,15 @@ use uuid::Uuid;
 pub struct EntityDef {
     pub id: Uuid,
     pub name: String,
+    pub health: i32,
 }
 
 impl EntityDef {
-    pub fn new(name: impl Into<String>) -> Self {
+    pub fn new(name: impl Into<String>, health: i32) -> Self {
         Self {
             id: Uuid::new_v4(),
             name: name.into(),
+            health,
         }
     }
 }

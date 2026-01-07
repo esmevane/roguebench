@@ -23,6 +23,12 @@ pub fn tick_duration() -> Duration {
 #[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct EntityName(pub String);
 
+/// Replicated component for entity health.
+///
+/// Represents the current health of a spawned entity.
+#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct Health(pub i32);
+
 /// Channel for reliable ordered messages.
 pub struct ReliableChannel;
 
@@ -43,6 +49,7 @@ impl Plugin for ProtocolPlugin {
     fn build(&self, app: &mut App) {
         // Register replicated components
         app.register_component::<EntityName>();
+        app.register_component::<Health>();
 
         // Register channels
         app.add_channel::<ReliableChannel>(ChannelSettings {
@@ -54,7 +61,7 @@ impl Plugin for ProtocolPlugin {
 
 pub mod prelude {
     pub use crate::{
-        tick_duration, EditorMessage, EntityName, ProtocolPlugin, ReliableChannel,
+        tick_duration, EditorMessage, EntityName, Health, ProtocolPlugin, ReliableChannel,
         FIXED_TIMESTEP_HZ,
     };
     pub use roguebench_core::prelude::*;

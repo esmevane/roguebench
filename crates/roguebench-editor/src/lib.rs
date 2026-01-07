@@ -39,12 +39,14 @@ struct AppState {
 #[derive(Deserialize)]
 struct CreateEntityRequest {
     name: String,
+    health: i32,
 }
 
 #[derive(Serialize, Deserialize)]
 struct EntityResponse {
     id: String,
     name: String,
+    health: i32,
 }
 
 async fn index() -> Html<&'static str> {
@@ -65,6 +67,7 @@ async fn index() -> Html<&'static str> {
     <h1>Entity Editor</h1>
     <form id="create-form">
         <input type="text" id="name" placeholder="Entity name" required>
+        <input type="number" id="health" placeholder="Health" value="100" required>
         <button type="submit">Create</button>
     </form>
     <h2>Entities</h2>
@@ -74,17 +77,19 @@ async fn index() -> Html<&'static str> {
             const res = await fetch('/entities');
             const entities = await res.json();
             const ul = document.getElementById('entities');
-            ul.innerHTML = entities.map(e => `<li>${e.name} (${e.id})</li>`).join('');
+            ul.innerHTML = entities.map(e => `<li>${e.name} (HP: ${e.health}) - ${e.id}</li>`).join('');
         }
         document.getElementById('create-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('name').value;
+            const health = parseInt(document.getElementById('health').value, 10);
             await fetch('/entities', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name })
+                body: JSON.stringify({ name, health })
             });
             document.getElementById('name').value = '';
+            document.getElementById('health').value = '100';
             loadEntities();
         });
         loadEntities();
@@ -102,6 +107,7 @@ async fn list_entities(State(state): State<AppState>) -> impl IntoResponse {
                 .map(|e| EntityResponse {
                     id: e.id.to_string(),
                     name: e.name,
+                    health: e.health,
                 })
                 .collect();
             Json(response).into_response()
@@ -114,13 +120,14 @@ async fn create_entity(
     State(state): State<AppState>,
     Json(req): Json<CreateEntityRequest>,
 ) -> impl IntoResponse {
-    let entity = EntityDef::new(req.name);
+    let entity = EntityDef::new(req.name, req.health);
     match state.store.save_entity(&entity) {
         Ok(()) => {
             let _ = state.message_tx.send(EditorMessage::ReloadEntities);
             let response = EntityResponse {
                 id: entity.id.to_string(),
                 name: entity.name,
+                health: entity.health,
             };
             (StatusCode::CREATED, Json(response)).into_response()
         }
@@ -229,7 +236,7 @@ mod tests {
                     .method("POST")
                     .uri("/entities")
                     .header("content-type", "application/json")
-                    .body(Body::from(r#"{"name": "Goblin"}"#))
+                    .body(Body::from(r#"{"name": "Goblin", "health": 50}"#))
                     .unwrap(),
             )
             .await
@@ -240,12 +247,14 @@ mod tests {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let created: EntityResponse = serde_json::from_slice(&body).unwrap();
         assert_eq!(created.name, "Goblin");
+        assert_eq!(created.health, 50);
         assert!(!created.id.is_empty());
 
         // Verify entity was saved to storage
         let stored = storage.load_entities().unwrap();
         assert_eq!(stored.len(), 1);
         assert_eq!(stored[0].name, "Goblin");
+        assert_eq!(stored[0].health, 50);
 
         // Verify message was sent to engine
         let msg = rx.try_recv().unwrap();
@@ -258,8 +267,8 @@ mod tests {
         let (tx, _rx) = mpsc::unbounded_channel();
 
         // Pre-populate storage
-        let entity1 = EntityDef::new("Goblin");
-        let entity2 = EntityDef::new("Orc");
+        let entity1 = EntityDef::new("Goblin", 30);
+        let entity2 = EntityDef::new("Orc", 80);
         storage.save_entity(&entity1).unwrap();
         storage.save_entity(&entity2).unwrap();
 
@@ -284,5 +293,11 @@ mod tests {
         let names: Vec<&str> = entities.iter().map(|e| e.name.as_str()).collect();
         assert!(names.contains(&"Goblin"));
         assert!(names.contains(&"Orc"));
+
+        // Verify health values are returned
+        let goblin = entities.iter().find(|e| e.name == "Goblin").unwrap();
+        let orc = entities.iter().find(|e| e.name == "Orc").unwrap();
+        assert_eq!(goblin.health, 30);
+        assert_eq!(orc.health, 80);
     }
 }
