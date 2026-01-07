@@ -192,7 +192,7 @@ A specific entity in the game world, created from a template.
 Applying changes without restarting.
 
 **Scope in this project:**
-- Content definitions (items, enemies, rooms) — should hot reload
+- Asset based (vs database-originated) content definitions (items, enemies, rooms) — should hot reload
 - Scripts — should hot reload
 - Rust code — requires rebuild (acceptable)
 

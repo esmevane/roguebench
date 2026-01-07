@@ -96,7 +96,6 @@ Unlike these references, we're:
 - **Not a moddable game** — No mod distribution, workshop, or public API (yet)
 - **Not a visual programming tool** — Scripts are text, not node graphs
 - **Not an asset creation tool** — Sprites and audio come from elsewhere
-- **Not multiplayer-first** — Networking exists but isn't the primary concern
 
 ## Guiding Principles
 

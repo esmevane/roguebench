@@ -62,7 +62,7 @@ The game server serves two purposes:
 1. **Web Editor**: axum serves HTML forms at `localhost:8080` for content authoring
 2. **Game Server**: Bevy runs headless, manages authoritative game state, Lightyear replicates to clients
 
-The editor writes directly to SQLite. The game server reads from SQLite and hot-reloads when content changes.
+The editor writes directly to SQLite. The game server reads from SQLite.
 
 ### Client (roguebench-client)
 
