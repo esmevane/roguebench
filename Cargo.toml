@@ -11,11 +11,14 @@ license = "UNLICENSED"
 [workspace.dependencies]
 # Internal crates
 roguebench-core = { path = "crates/roguebench-core" }
+roguebench-editor = { path = "crates/roguebench-editor" }
+roguebench-engine = { path = "crates/roguebench-engine" }
 roguebench-protocol = { path = "crates/roguebench-protocol" }
+roguebench-storage = { path = "crates/roguebench-storage" }
 
 # Bevy ecosystem
 bevy = "0.17"
-lightyear = "0.25"
+lightyear = { version = "0.25", features = ["server", "client", "udp", "netcode"] }
 
 # Web server
 axum = "0.8"

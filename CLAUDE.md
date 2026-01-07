@@ -88,7 +88,12 @@ Use beads for issue tracking:
 ## Session Workflow
 
 1. **Start**: Check `/beads:ready`, `/journal:recall --recent`
-2. **Work**: Pick item, verify workflow alignment, implement test-first
+2. **Work**:
+  - Consult project agents liberally: `/mission-lead`, `/alignment`, `/bevy`, `/custodian`, `/domain`
+  - Pick item for session work
+  - Verify workflow alignment
+  - Implement test-first
+  - `/journal:remember` important moments throughout
 3. **End**: `/self-review`, commit, update beads, `/journal:remember`
 
 ## Agents

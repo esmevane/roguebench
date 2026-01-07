@@ -1,0 +1,24 @@
+[package]
+name = "roguebench-client"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "roguebench-client"
+path = "src/main.rs"
+
+[dependencies]
+roguebench-core.workspace = true
+roguebench-protocol.workspace = true
+
+# Bevy ecosystem
+bevy.workspace = true
+lightyear.workspace = true
+
+# Utilities
+anyhow.workspace = true
+rand = "0.8"
+tracing.workspace = true
+tracing-subscriber.workspace = true

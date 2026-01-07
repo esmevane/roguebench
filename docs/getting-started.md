@@ -4,6 +4,46 @@ How to set up a new project, start a session, and understand the development pro
 
 ---
 
+## Critical: Agents Are Required
+
+**Agents are not optional.** They are checkpoints that ensure work aligns with mission, architecture, and best practices.
+
+### The Orchestrator
+
+**Use the orchestrator agent to manage the process itself.** The orchestrator:
+- Ensures you check in with all necessary agents
+- Picks which agents you need for current work
+- Ensures you use journal and beads regularly
+- Catches process drift before it compounds
+
+**Invoke orchestrator:**
+- At SESSION START
+- PERIODICALLY during long work (every 30-60 min)
+- Before COMPLETING/COMMITTING work
+- After CONTEXT COMPACTION (summary was loaded)
+
+### Required Checkpoints
+
+Before any implementation work (in ANY mode), you MUST:
+
+1. **Consult mission-lead** — Is this the right work? Does it align with priorities?
+2. **Consult architect** — For structural decisions, new patterns, or crate boundaries
+3. **Consult relevant domain agent** — For domain-specific implementation (bevy, networking, etc.)
+
+During implementation:
+- **Run deferral-guard** if you feel tempted to stub, defer, or skip
+- **Run alignment** if you're unsure whether work matches documented workflows
+- **Run custodian** periodically to check for accumulating debt
+- **Run orchestrator** periodically to verify process adherence
+
+At session end:
+- **Run self-review** before committing any significant work
+- **Run orchestrator** for final process check
+
+**Skipping agents is not acceptable.** If agents aren't being consulted, the process is broken.
+
+---
+
 ## Which Mode Are You In?
 
 | Mode | Situation | Go To |
@@ -76,6 +116,8 @@ Create `.claude/agents/` directory with specialized agents. See `docs/agents/` f
 
 | Agent | Purpose | Spec |
 |-------|---------|------|
+| **orchestrator** | Process guardian, ensures agent/tool usage | docs/agents/orchestrator.md |
+| **mission-lead** | Mission alignment and work approval | docs/agents/mission-lead.md |
 | **architect** | Pattern design and structural guidance | docs/agents/architect.md |
 | **alignment** | Workflow and decision consistency | docs/agents/alignment.md |
 | **best-practices** | SOLID, hexagonal, component design | docs/agents/best-practices.md |
@@ -135,33 +177,7 @@ This creates `.beads/beads.db` for issue tracking. Issues will be named `<prefix
 
 #### Initialize Journal (Session Context)
 
-Run `/journal:init` or execute directly:
-
-```bash
-sqlite3 .claude/journal.db << 'EOF'
-CREATE TABLE IF NOT EXISTS entries (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    kind TEXT NOT NULL CHECK(kind IN ('decision', 'assumption', 'observation', 'question', 'workflow', 'pattern', 'anti_pattern', 'blocker')),
-    content TEXT NOT NULL,
-    confidence REAL DEFAULT 1.0,
-    tags TEXT DEFAULT '',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_entries_kind ON entries(kind);
-CREATE INDEX IF NOT EXISTS idx_entries_created_at ON entries(created_at);
-CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(content, tags, content='entries', content_rowid='id');
-CREATE TRIGGER IF NOT EXISTS entries_ai AFTER INSERT ON entries BEGIN
-    INSERT INTO entries_fts(rowid, content, tags) VALUES (new.id, new.content, new.tags);
-END;
-CREATE TRIGGER IF NOT EXISTS entries_ad AFTER DELETE ON entries BEGIN
-    INSERT INTO entries_fts(entries_fts, rowid, content, tags) VALUES('delete', old.id, old.content, old.tags);
-END;
-CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN
-    INSERT INTO entries_fts(entries_fts, rowid, content, tags) VALUES('delete', old.id, old.content, old.tags);
-    INSERT INTO entries_fts(rowid, content, tags) VALUES (new.id, new.content, new.tags);
-END;
-EOF
-```
+Run `/journal:init`.
 
 This creates `.claude/journal.db` for persistent context across sessions.
 
@@ -190,6 +206,35 @@ git add . && git commit -m "Setup complete"
 ```
 
 **Note:** The journal database (`.claude/journal.db`) is typically gitignored for per-developer context. Add it to `.gitignore` if you want separate journals per developer, or commit it for shared institutional memory.
+
+### Before Starting Implementation (REQUIRED)
+
+Setup creates the structure. Before any implementation work begins:
+
+1. **Consult mission-lead**
+   ```
+   Use mission-lead to determine the first work item
+   ```
+   - What's the highest priority?
+   - What's the first walking skeleton to build?
+   - Does the proposed approach align with mission?
+
+2. **Consult architect**
+   ```
+   Use architect to review the proposed approach
+   ```
+   - Is the crate structure appropriate?
+   - Are there patterns to follow?
+   - What are the key boundaries?
+
+3. **Create a tracking issue**
+   ```
+   /beads:create
+   ```
+   - Document what you're about to build
+   - Get mission-lead approval on the issue
+
+**Do not proceed to implementation without completing these steps.**
 
 ---
 
@@ -221,10 +266,13 @@ How to start a development session.
    /journal:review             # Open questions/blockers
    ```
 
-4. **Quick self-review** (verify context)
+4. **Run orchestrator** (REQUIRED)
    ```
-   /self-review --quick
+   Use orchestrator to audit session start
    ```
+   - Establishes process awareness
+   - Identifies which agents to consult
+   - Catches gaps from previous session
 
 5. **Identify work item**
    - Pick from ready issues, or
@@ -232,9 +280,37 @@ How to start a development session.
 
 ---
 
+### Session Process
+
+1. **Start**:
+   - `/beads:ready`, `/journal:recall --recent`
+   - **orchestrator**: Audit session start, identify required agents
+   - Consult **mission-lead** to confirm work item priority
+
+2. **Before Implementation** (REQUIRED for each work item):
+   - **mission-lead**: Approve the specific work item
+   - **architect**: Review structural approach (if new patterns/crates)
+   - **domain agent** (bevy, etc.): Review implementation approach
+
+3. **During Work**:
+   - **deferral-guard**: If tempted to defer or stub
+   - **alignment**: If unsure about workflow match
+   - **custodian**: Periodically check for debt
+   - **orchestrator**: Every 30-60 minutes to verify process
+   - `/journal:remember` decisions and observations
+
+4. **End**:
+   - **orchestrator**: Final process audit
+   - **self-review**: Before any commit
+   - Commit, update beads, `/journal:remember`
+
+**Agents are checkpoints, not suggestions. Skipping them breaks the process.**
+
+---
+
 ### Begin Work
 
-Once mission-lead approves:
+Once mission-lead approves the work item:
 
 1. **Verify workflow alignment**
    - Which workflow does this serve?
@@ -300,10 +376,17 @@ How to evaluate an existing codebase.
    - Testing strategy
    - Build and dev tools
 
-2. **Run local agents**
-   - Run alignment, architect, best practices, and mission-lead agents
-   - Gather feedback
-   - Use feedback to inform assessment
+2. **Run agents (REQUIRED)**
+   Run each of these and document their findings:
+   ```
+   Use mission-lead to assess alignment with documented goals
+   Use architect to assess code structure and patterns
+   Use alignment to assess workflow consistency
+   Use best-practices to assess code quality
+   Use custodian to assess technical debt
+   ```
+
+   **All agents must be consulted during assessment.** Their feedback forms the basis of the assessment report.
 
 3. **Compare to documentation**
    - What's documented vs. implemented?

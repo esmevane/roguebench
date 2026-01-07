@@ -1,5 +1,5 @@
 [package]
-name = "roguebench-protocol"
+name = "roguebench-storage"
 version.workspace = true
 edition.workspace = true
 repository.workspace = true
@@ -7,6 +7,10 @@ license.workspace = true
 
 [dependencies]
 roguebench-core.workspace = true
-bevy.workspace = true
-lightyear.workspace = true
-serde.workspace = true
+
+# Database
+rusqlite.workspace = true
+
+# Utilities
+uuid.workspace = true
+thiserror.workspace = true

@@ -1,0 +1,29 @@
+[package]
+name = "roguebench-server"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "roguebench-server"
+path = "src/main.rs"
+
+[dependencies]
+roguebench-editor.workspace = true
+roguebench-engine.workspace = true
+roguebench-protocol.workspace = true
+roguebench-storage.workspace = true
+
+# Bevy ecosystem
+bevy.workspace = true
+lightyear.workspace = true
+
+# Async runtime (for spawning editor server)
+tokio.workspace = true
+
+# Utilities
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uuid.workspace = true

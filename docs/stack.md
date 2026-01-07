@@ -42,6 +42,7 @@ project/
 ├── crates/
 │   ├── roguebench-core/        # Platform-agnostic types (no Bevy)
 │   ├── roguebench-protocol/    # Network protocol, shared components
+│   ├── roguebench-storage/     # Content storage (SQLite, in-memory)
 │   ├── roguebench-engine/      # Bevy plugins and systems
 │   ├── roguebench-editor/      # Web editor backend
 │   ├── roguebench-client/      # Game client binary

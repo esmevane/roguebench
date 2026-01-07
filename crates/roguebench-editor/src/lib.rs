@@ -1,0 +1,161 @@
+//! Web editor backend for roguebench.
+//!
+//! Provides an HTTP API and simple HTML interface for content authoring.
+
+use std::net::SocketAddr;
+use std::sync::Arc;
+
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::{Html, IntoResponse},
+    routing::get,
+    Json, Router,
+};
+use roguebench_core::EntityDef;
+use roguebench_protocol::EditorMessage;
+use roguebench_storage::ContentStore;
+use serde::{Deserialize, Serialize};
+use tokio::sync::mpsc;
+use tower_http::cors::CorsLayer;
+
+/// Configuration for the editor.
+pub struct EditorConfig {
+    /// Content storage backend.
+    pub storage: Arc<dyn ContentStore>,
+    /// Sender for engine messages.
+    pub message_tx: mpsc::UnboundedSender<EditorMessage>,
+    /// Address to listen on.
+    pub listen_addr: SocketAddr,
+}
+
+/// Shared state for axum handlers.
+#[derive(Clone)]
+struct AppState {
+    store: Arc<dyn ContentStore>,
+    message_tx: mpsc::UnboundedSender<EditorMessage>,
+}
+
+#[derive(Deserialize)]
+struct CreateEntityRequest {
+    name: String,
+}
+
+#[derive(Serialize)]
+struct EntityResponse {
+    id: String,
+    name: String,
+}
+
+async fn index() -> Html<&'static str> {
+    Html(
+        r#"<!DOCTYPE html>
+<html>
+<head>
+    <title>Roguebench Editor</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        input, button { padding: 8px; margin: 4px 0; }
+        input { width: 200px; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 8px; background: #f0f0f0; margin: 4px 0; }
+    </style>
+</head>
+<body>
+    <h1>Entity Editor</h1>
+    <form id="create-form">
+        <input type="text" id="name" placeholder="Entity name" required>
+        <button type="submit">Create</button>
+    </form>
+    <h2>Entities</h2>
+    <ul id="entities"></ul>
+    <script>
+        async function loadEntities() {
+            const res = await fetch('/entities');
+            const entities = await res.json();
+            const ul = document.getElementById('entities');
+            ul.innerHTML = entities.map(e => `<li>${e.name} (${e.id})</li>`).join('');
+        }
+        document.getElementById('create-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            await fetch('/entities', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            document.getElementById('name').value = '';
+            loadEntities();
+        });
+        loadEntities();
+    </script>
+</body>
+</html>"#,
+    )
+}
+
+async fn list_entities(State(state): State<AppState>) -> impl IntoResponse {
+    match state.store.load_entities() {
+        Ok(entities) => {
+            let response: Vec<EntityResponse> = entities
+                .into_iter()
+                .map(|e| EntityResponse {
+                    id: e.id.to_string(),
+                    name: e.name,
+                })
+                .collect();
+            Json(response).into_response()
+        }
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    }
+}
+
+async fn create_entity(
+    State(state): State<AppState>,
+    Json(req): Json<CreateEntityRequest>,
+) -> impl IntoResponse {
+    let entity = EntityDef::new(req.name);
+    match state.store.save_entity(&entity) {
+        Ok(()) => {
+            let _ = state.message_tx.send(EditorMessage::ReloadEntities);
+            let response = EntityResponse {
+                id: entity.id.to_string(),
+                name: entity.name,
+            };
+            (StatusCode::CREATED, Json(response)).into_response()
+        }
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    }
+}
+
+/// Build the editor router.
+pub fn router(storage: Arc<dyn ContentStore>, message_tx: mpsc::UnboundedSender<EditorMessage>) -> Router {
+    let state = AppState {
+        store: storage,
+        message_tx,
+    };
+
+    Router::new()
+        .route("/", get(index))
+        .route("/entities", get(list_entities).post(create_entity))
+        .layer(CorsLayer::permissive())
+        .with_state(state)
+}
+
+/// Run the editor web server.
+pub async fn run(config: EditorConfig) {
+    let app = router(config.storage, config.message_tx);
+
+    tracing::info!("Web editor listening on http://{}", config.listen_addr);
+
+    let listener = tokio::net::TcpListener::bind(config.listen_addr)
+        .await
+        .expect("Failed to bind editor address");
+    axum::serve(listener, app)
+        .await
+        .expect("Editor server failed");
+}
+
+pub mod prelude {
+    pub use crate::{router, run, EditorConfig};
+}

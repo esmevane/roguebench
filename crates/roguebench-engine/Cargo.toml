@@ -1,0 +1,20 @@
+[package]
+name = "roguebench-engine"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+roguebench-protocol.workspace = true
+roguebench-storage.workspace = true
+
+# Bevy ecosystem
+bevy.workspace = true
+lightyear.workspace = true
+
+# Async channel
+tokio = { workspace = true, features = ["sync"] }
+
+# Utilities
+tracing.workspace = true
