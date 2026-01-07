@@ -9,17 +9,19 @@ How to set up a new project, start a session, and understand the development pro
 | Mode | Situation | Go To |
 |------|-----------|-------|
 | **Bootstrap** | Brand new repo, nothing exists yet | [Setup](#setup) |
+| **Reboot** | Existing repo, cleared out | [Setup](#setup) |
 | **Onboard** | Repo exists, you're new to it | [Assess](#assess) |
 | **Resume** | Continuing work from previous session | [Session](#session) |
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
-│   New repo?  ──yes──▶  BOOTSTRAP (Setup)                   │
+│   New or clean repo?  ──yes──▶  BOOTSTRAP (Setup)                   │
 │      │                      │                               │
 │      no                     ▼                               │
 │      │               Create structure                       │
-│      ▼               Create agents                          │
+│      |               Create agents                          │
+│      │                      │                               │
 │   New to repo? ─yes─▶  ONBOARD (Assess)                    │
 │      │                      │                               │
 │      no                     ▼                               │
@@ -32,6 +34,8 @@ How to set up a new project, start a session, and understand the development pro
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+
 
 ---
 
@@ -49,13 +53,8 @@ If `/beads` (preferred, Claude skill) or `bd` (secondary, CLI tool) aren't prese
 project/
 ├── .claude/
 │   ├── CLAUDE.md              # Project-specific instructions
-│   ├── agents/                # Project-specific agents
-│   │   ├── mission-lead.md
-│   │   ├── test-designer.md
-│   │   ├── architect.md
-│   │   └── {domain}.md        # Feature domain specialists
-│   └── rules/                 # Modular rules (can symlink shared)
-│       └── *.md
+│   ├── agents/                # Project-specific agents (from `docs/agents/`)
+│   ├── skills/                # Project-specific skills (from `docs/skills/`)
 ├── docs/
 │   ├── mission.md             # Goal, users, success criteria
 │   ├── glossary.md            # Terms of art
@@ -67,110 +66,36 @@ project/
 └── src/                       # Implementation
 ```
 
-### Claude Configuration Hierarchy
-
-Claude Code loads instructions from multiple sources (combined, not overridden):
-
-| Location | Purpose | Scope |
-|----------|---------|-------|
-| `~/.claude/CLAUDE.md` | Personal philosophy, coding style | All your projects |
-| `~/.claude/rules/*.md` | Personal rules | All your projects |
-| `./.claude/CLAUDE.md` | Project-specific instructions | This project, shared with team |
-| `./.claude/rules/*.md` | Project rules | This project |
-| `./CLAUDE.local.md` | Private overrides (gitignored) | This project, you only |
-
-**Recommendation:**
-- Keep coding philosophy in `~/.claude/CLAUDE.md`
-- Keep project mission/terms in `./.claude/CLAUDE.md`
-- Use `.claude/rules/` for modular, shareable rules
-- Use imports (`@path/to/file.md`) to reference docs
-
 ### Bootstrapping Agents
 
-Create `.claude/agents/` directory with specialized agents. See `docs/agents/` for full specs.
+Create `.claude/agents/` directory with specialized agents. See `docs/agents/` for full specs. Copy these over.
 
-#### Core Agents (Always Present)
-
-| Agent | Purpose | See |
-|-------|---------|-----|
-| **mission-lead** | Direction and alignment with goals | docs/agents/ or below |
-| **test-designer** | Outside-in test design | docs/agents/ or below |
-| **architect** | Pattern observation and structure | docs/agents/ or below |
-
-#### Quality Agents (For Self-Review)
+#### Agent Overview
 
 | Agent | Purpose | Spec |
 |-------|---------|------|
-| **organizer** | Code organization and naming | docs/agents/organizer.md |
-| **custodian** | Technical debt and code health | docs/agents/custodian.md |
+| **architect** | Pattern design and structural guidance | docs/agents/architect.md |
 | **alignment** | Workflow and decision consistency | docs/agents/alignment.md |
 | **best-practices** | SOLID, hexagonal, component design | docs/agents/best-practices.md |
+| **bevy** | Bevy design and implementation guidance | docs/agents/bevy.md |
+| **custodian** | Technical debt and code health | docs/agents/custodian.md |
 | **deferral-guard** | Prevent stubs and deferrals | docs/agents/deferral-guard.md |
+| **organizer** | Code organization and naming | docs/agents/organizer.md |
 
-#### Skills
+#### Domain agents
+
+**Domain agents** — Create as needed for specific areas (camera, combat, editor, etc.)
+
+### Bootstrapping Skills
+
+Create `.claude/skills/` directory with specialized skills. See `docs/skills/` for full specs. Copy these over.
+
+#### Skills Overview
 
 | Skill | Purpose | Spec |
 |-------|---------|------|
-| **memory** | Persistent context across sessions | docs/agents/memory.md |
-| **self-review** | Quality verification with rule of five | docs/agents/self-review.md |
-
-#### Agent Definitions
-
-**mission-lead.md** — Direction and alignment
-```markdown
----
-name: mission-lead
-description: Mission and direction specialist. Use when starting work, making architectural decisions, or questioning priorities.
-tools: Read, Grep, Glob
-model: opus
----
-
-You are the mission lead. Your role:
-1. Maintain awareness of project goals (read docs/mission.md)
-2. Ensure work aligns with the mission
-3. Surface tensions between tactical decisions and strategic goals
-4. Guide prioritization using docs/priorities.md
-
-When consulted, reference project documentation. Be pragmatic—surface issues for human decision rather than enforcing rules.
-```
-
-**test-designer.md** — Testing strategy
-```markdown
----
-name: test-designer
-description: Test design specialist. Use when designing features, debugging issues, or establishing verification strategies.
-tools: Read, Grep, Glob, Bash, Edit
-model: sonnet
----
-
-You design tests following outside-in, test-driven principles:
-1. Define what the user does (action)
-2. Define what should happen (effect)
-3. Write test asserting action → effect
-4. Implementation is a black box
-
-Reference docs/glossary.md for testing terminology.
-```
-
-**architect.md** — Pattern observation
-```markdown
----
-name: architect
-description: Architecture specialist. Use when patterns emerge, boundaries are unclear, or structural issues arise.
-tools: Read, Grep, Glob
-model: opus
----
-
-You observe patterns across the codebase:
-1. Identify emerging abstractions
-2. Surface inconsistencies
-3. Recommend when to extract frameworks
-4. Ensure boundaries are respected
-
-You don't prescribe—you observe and surface. Decisions are human-made.
-```
-
-**Domain agents** — Create as needed for specific areas (camera, combat, editor, etc.)
+| **memory** | Persistent context across sessions | docs/skills/memory.md |
+| **self-review** | Quality verification with rule of five | docs/skills/self-review.md |
 
 ### First-Time Setup Commands
 
@@ -195,55 +120,6 @@ claude
 # Verify setup
 > Use mission-lead to verify this project is set up correctly
 ```
-
-### Using These Docs as a Starter Kit
-
-To use this documentation structure for a new project:
-
-**1. Copy the generic docs as-is:**
-- `priorities.md` — Works for any project
-- `glossary.md` — Works for any project (add project-specific terms)
-- `roles.md` — Works for any project
-
-**2. Customize these docs for your project:**
-
-| Document | What to Customize |
-|----------|-------------------|
-| `mission.md` | Goal, users, success criteria, reference points |
-| `stack.md` | Language, framework, dependencies, project structure |
-| `workflows.md` | Your project's authoring workflows |
-| `approach.md` | Your project's workflow-first methodology |
-| `getting-started.md` | Project-specific commands, tracking tools |
-
-**3. Create project-specific `.claude/CLAUDE.md`:**
-
-```markdown
-# Project: [Your Project Name]
-
-## Required Reading
-Before any work, read:
-- docs/mission.md — Understand the goal
-- docs/glossary.md — Understand the terms
-- docs/priorities.md — Understand how to prioritize
-
-## Project-Specific Rules
-[Add your project's coding standards, patterns, etc.]
-
-## Key Commands
-[Add your project's common commands]
-```
-
-**4. Create agents:**
-The agent templates in this doc are generic. Customize their prompts to reference your project's documentation.
-
-**Portable vs. Project-Specific:**
-
-| Type | Location | Contents |
-|------|----------|----------|
-| Personal philosophy | `~/.claude/CLAUDE.md` | Your coding style, applies to all projects |
-| Shared rules | `~/.claude/rules/*.md` | Rules you want everywhere |
-| Project instructions | `./.claude/CLAUDE.md` | This project's specific context |
-| Project rules | `./.claude/rules/*.md` | This project's modular rules |
 
 ## Concluding setup
 
@@ -279,25 +155,29 @@ How to start a development session.
    > /self-review --quick
    ```
 
-4. **Consult mission-lead**
-   ```
-   > Use mission-lead to assess current priorities given recent changes
-   ```
-
-5. **Identify work item**
+4. **Identify work item**
    - Pick from ready issues, or
-   - Identify emergent need from mission-lead assessment
+   - Identify emergent need from context
 
-6. **Verify workflow alignment**
+---
+
+### Begin Work
+
+Once mission-lead approves:
+
+1. **Verify workflow alignment**
    - Which workflow does this serve?
    - Is there a walking skeleton to build/extend?
    - If blocked, address blocker instead
 
-7. **Begin work**
+2. **Start implementation**
    - Start with test or spike as appropriate
    - Use domain agent if available
    - Track progress with beads
-   - Watch for deferral signals
+
+3. **Watch for deferral signals**
+   - If deferral-guard blocks, stop and resolve
+   - Do not proceed around blocked deferrals
 
 ### Session End Checklist
 
@@ -332,7 +212,7 @@ How to start a development session.
 
 ## Assess
 
-How to evaluate an existing codebase (like what we did today).
+How to evaluate an existing codebase.
 
 ### Assessment Process
 
@@ -349,23 +229,28 @@ How to evaluate an existing codebase (like what we did today).
    - Testing strategy
    - Build and dev tools
 
-2. **Compare to documentation**
+2. **Run local agents**
+   - Run alignment, architect, best practices, and mission-lead agents
+   - Gather feedback
+   - Use feedback to inform assessment
+
+3. **Compare to documentation**
    - What's documented vs. implemented?
    - What's planned vs. built?
    - Where are the gaps?
 
-3. **Identify blockers**
+4. **Identify blockers**
    - Unresolved decisions (TBDs)
    - Missing frameworks
    - Incomplete vertical slices
 
-4. **Assess instruction quality**
+5. **Assess instruction quality**
    - Are terms defined? (glossary)
    - Is the goal clear? (mission)
    - Is prioritization framework present?
    - Do agents have enough context?
 
-5. **Document findings**
+6. **Document findings**
    - Gaps in instructions
    - Gaps in implementation
    - Recommendations for next steps
@@ -414,7 +299,7 @@ The development process itself.
 Identify → Design → Test → Implement → Verify → Integrate
 ```
 
-1. **Identify** — What's the next highest priority? (Use priorities.md)
+1. **Identify** — What's the next highest priority? (Consult mission lead)
 2. **Design** — How should it work? (Consult architect if structural)
 3. **Test** — What test would prove it works? (Test-first)
 4. **Implement** — Make the test pass (Minimal implementation)
@@ -458,7 +343,6 @@ When blocked:
 | docs/stack.md | Technology choices, project structure, commands |
 | docs/glossary.md | Term definitions |
 | docs/workflows.md | How users accomplish tasks |
-| docs/priorities.md | Decision framework |
 | docs/approach.md | Workflow-first methodology |
 | docs/roles.md | Agent/team structure |
 

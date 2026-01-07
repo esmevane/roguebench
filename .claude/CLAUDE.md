@@ -15,13 +15,24 @@ Before any work, understand:
 | @docs/workflows.md | How users accomplish tasks |
 | @docs/approach.md | Workflow-first development |
 
+## MANDATORY: Agent Checkpoints
+
+### Before ANY Work Begins
+**mission-lead MUST approve before implementation starts.**
+This is not optional. Do not proceed without explicit approval.
+
+### When Deferral is Detected
+**deferral-guard MUST be invoked and its decision followed.**
+Progress stops until deferral is resolved or explicitly approved.
+
 ## Core Agents
 
-| Agent | When to Use |
-|-------|-------------|
-| **mission-lead** | Starting work, architectural decisions, questioning priorities |
-| **test-designer** | Designing features, debugging, verification strategies |
-| **architect** | Patterns emerging, unclear boundaries, structural issues |
+| Agent | When to Use | Mandatory? |
+|-------|-------------|------------|
+| **mission-lead** | Starting work, architectural decisions | **YES - blocks work** |
+| **deferral-guard** | Deferral language detected | **YES - blocks progress** |
+| **test-designer** | Designing features, debugging | No |
+| **architect** | Patterns emerging, unclear boundaries | No |
 
 ## Quality Agents
 
@@ -30,7 +41,6 @@ For self-review (see @docs/agents/self-review.md):
 - **best-practices** — SOLID, hexagonal, component design
 - **organizer** — Code organization and naming
 - **custodian** — Technical debt and code health
-- **deferral-guard** — Prevent stubs and deferrals
 
 ## Project Stack
 
@@ -99,8 +109,18 @@ See @docs/getting-started.md for full workflow.
 ```
 /beads:ready
 /memory:recall --recent
-Use mission-lead to assess priorities
 ```
+
+**MANDATORY - Get Approval Before Work:**
+```
+Use mission-lead to approve: [describe intended work]
+```
+Do not proceed until mission-lead returns "Proceed: Yes".
+
+**During Work:**
+- Watch for deferral signals (later, for now, TBD, etc.)
+- If detected, invoke deferral-guard immediately
+- Progress stops until deferral-guard resolves
 
 **End:**
 ```

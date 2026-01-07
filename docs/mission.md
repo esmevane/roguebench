@@ -38,16 +38,16 @@ Full technical capability. Builds the workbench, extends systems, debugs issues.
 - Good observability for debugging
 - Patterns that scale as complexity grows
 
-## What Success Looks Like
+## Example: What Success Looks Like
 
-The workbench is minimally viable when a non-programmer can:
+If the workflow is "Build Enemies", then it is minimally viable when a non-programmer can:
 
 1. **Define a new enemy type** — Set stats, choose behavior, see it spawn
 2. **Create a room layout** — Place tiles, set spawns, play through it
 3. **Script a simple behavior** — Enemy patrols, door opens on trigger
 4. **Save and resume** — Work persists across sessions
 
-Each of these is a vertical slice: editor → data → runtime → persistence → verification.
+All of these together are a vertical slice: editor → data → runtime → persistence → verification.
 
 ## Reference Points
 
@@ -100,24 +100,24 @@ Unlike these references, we're:
 
 ## Guiding Principles
 
-### Authoring Over Playing
+### Authoring Playable Experiences
 
-Every architectural decision should ask: "Does this help someone create content?"
+Every architectural decision should ask: "Does this help someone create playable content?"
 
 Gameplay features matter only insofar as they can be authored. A combat system that's fun but hardcoded is less valuable than a simpler system that's data-driven.
 
 ### Functional Over Fancy
 
-The editor should work, not impress. Forms over canvases. Text fields over drag handles. A working ugly thing beats a polished incomplete thing.
+The editor should work, not impress. In early stages it is more important to get things working, before polishing.
 
 ### Frameworks Before Features
 
-Features that need infrastructure should wait for that infrastructure. Building features without their foundations creates debt that blocks future work.
+Features which need infrastructure require framework infrastructure to be built first. Identify the infrastructure and build it out for the first appearance of each new kind of feature.
 
 ### Vertical Over Horizontal
 
-Completing one content type end-to-end is more valuable than partial progress on many. A user who can define items (but not enemies) can still create. A user with half-built systems for everything can create nothing.
+This is a networked system and involves many moving parts. All workflows must cross each system end-to-end in order to be considered ready. Completing workflows fully across all boundaries is more important than partial progress in one layer. 
 
-### Fast Feedback Over Correctness
+### Fast Feedback
 
-Hot reload, runtime errors with context, immediate visual feedback. Users learn through iteration, not documentation.
+Prioritize choices that lead to quick feedback loops, always looking for options to enhance quicker feedback loops and enable user iteration through use of the system.
