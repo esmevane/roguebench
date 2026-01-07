@@ -248,7 +248,7 @@ Evolutionary architecture:
 
 Architecture governance:
 - Decision records
-- Memory skill for logging architectural decisions
+- Journal skill for logging architectural decisions / memories
 - Review processes
 - Compliance checking
 - Standard enforcement

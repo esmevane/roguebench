@@ -176,9 +176,9 @@ Invoke the Best Practices agent when:
    ```
 ```
 
-## Memory Integration
+## Journal Integration
 
 The Best Practices agent should:
-- Remember pattern decisions (`/memory:remember decision`)
-- Note recurring violations (`/memory:remember pattern` or `anti_pattern`)
+- Remember pattern decisions (`/journal:remember decision`)
+- Note recurring violations (`/journal:remember pattern` or `anti_pattern`)
 - Reference past patterns when suggesting improvements

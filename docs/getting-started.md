@@ -94,7 +94,7 @@ Create `.claude/skills/` directory with specialized skills. See `docs/skills/` f
 
 | Skill | Purpose | Spec |
 |-------|---------|------|
-| **memory** | Persistent context across sessions | docs/skills/memory.md |
+| **journal** | Persistent context across sessions | docs/skills/journal.md |
 | **self-review** | Quality verification with rule of five | docs/skills/self-review.md |
 
 ### First-Time Setup Commands
@@ -147,7 +147,7 @@ How to start a development session.
    claude
    > /beads:ready              # What's unblocked?
    > /beads:list --status open # What's in progress?
-   > /memory:recall --recent   # What did we decide/learn?
+   > /journal:recall --recent   # What did we decide/learn?
    ```
 
 3. **Quick self-review** (verify context)
@@ -194,12 +194,12 @@ Once mission-lead approves:
    - Commit with meaningful message
    - Reference issue ID in commit
 
-3. **Update tracking and memory**
+3. **Update tracking and journal**
    ```
    > /beads:update {id} --status {status}
    > /beads:sync --message "description of work"
-   > /memory:remember decision "..."   # Record key decisions
-   > /memory:remember observation "..."  # Record learnings
+   > /journal:remember decision "..."   # Record key decisions
+   > /journal:remember observation "..."  # Record learnings
    ```
 
 4. **Note context for next session**

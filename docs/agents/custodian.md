@@ -129,9 +129,9 @@ Invoke the Custodian when:
 - Recommend addressing before next milestone
 ```
 
-## Memory Integration
+## Journal Integration
 
 The Custodian should:
-- Remember debt decisions (`/memory:remember decision "Accepting X debt because Y"`)
-- Track debt over time (`/memory:remember observation "Debt in combat module growing"`)
-- Note anti-patterns (`/memory:remember anti_pattern "Workaround X led to problems"`)
+- Remember debt decisions (`/journal:remember decision "Accepting X debt because Y"`)
+- Track debt over time (`/journal:remember observation "Debt in combat module growing"`)
+- Note anti-patterns (`/journal:remember anti_pattern "Workaround X led to problems"`)

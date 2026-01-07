@@ -110,9 +110,9 @@ Invoke the Organizer when:
 - Recommend addressing medium issue before next milestone
 ```
 
-## Memory Integration
+## Journal Integration
 
 The Organizer should:
-- Remember organization decisions (`/memory:remember decision`)
+- Remember organization decisions (`/journal:remember decision`)
 - Check for past decisions before suggesting changes
-- Note recurring organization issues (`/memory:remember observation`)
+- Note recurring organization issues (`/journal:remember observation`)
