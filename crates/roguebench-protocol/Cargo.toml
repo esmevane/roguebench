@@ -1,9 +1,0 @@
-[package]
-name = "roguebench-protocol"
-version.workspace = true
-edition.workspace = true
-
-[dependencies]
-bevy = { workspace = true }
-lightyear = { workspace = true }
-serde = { workspace = true }
