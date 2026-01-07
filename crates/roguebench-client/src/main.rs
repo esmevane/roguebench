@@ -1,11 +1,15 @@
 //! roguebench-client: Game client with Bevy rendering
 //!
-//! For the walking skeleton, the client reads directly from the database.
-//! Later, this will connect to the server via Lightyear for networking.
+//! Connects to the server via Lightyear and renders replicated entities.
+//! The client has no direct database access - all game state comes from the server.
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
-use roguebench_core::{Database, EnemyDefinition, EnemyId};
-use std::collections::HashMap;
+use lightyear::prelude::client::*;
+use lightyear::prelude::*;
+use lightyear_udp::UdpIo;
+use roguebench_protocol::{Enemy, Position, ProtocolPlugin, FIXED_TIMESTEP_HZ, SERVER_PORT};
+use std::net::{Ipv4Addr, SocketAddr};
+use std::time::Duration;
 
 fn main() {
     App::new()
@@ -25,9 +29,12 @@ fn main() {
                     ..default()
                 }),
         )
-        .init_resource::<EnemyRegistry>()
-        .add_systems(Startup, (setup_camera, load_enemies, spawn_test_enemies).chain())
-        .add_systems(Update, check_for_reload)
+        .add_plugins(ClientPlugins {
+            tick_duration: Duration::from_secs_f64(1.0 / FIXED_TIMESTEP_HZ),
+        })
+        .add_plugins(ProtocolPlugin)
+        .add_systems(Startup, (setup_camera, connect_to_server))
+        .add_systems(Update, render_enemies)
         .run();
 }
 
@@ -36,203 +43,74 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d::default());
 }
 
-/// Registry holding loaded enemy definitions
-#[derive(Resource, Default)]
-struct EnemyRegistry {
-    enemies: HashMap<EnemyId, EnemyDefinition>,
-    last_load: Option<std::time::Instant>,
+/// Connect to the game server
+fn connect_to_server(mut commands: Commands) {
+    let server_addr = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), SERVER_PORT);
+
+    info!("Connecting to server at {}", server_addr);
+
+    // Spawn the client connection entity
+    commands.spawn((
+        Client::default(),
+        UdpIo::default(),
+        // Local address: use any available port
+        LocalAddr(SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), 0)),
+        // Server address to connect to
+        PeerAddr(server_addr),
+    ));
 }
 
-impl EnemyRegistry {
-    fn load_from_db(db: &Database) -> Self {
-        let enemies = db
-            .get_all_enemies()
-            .unwrap_or_default()
-            .into_iter()
-            .map(|e| (e.id.clone(), e))
-            .collect();
-
-        Self {
-            enemies,
-            last_load: Some(std::time::Instant::now()),
-        }
-    }
-
-    fn get(&self, id: &EnemyId) -> Option<&EnemyDefinition> {
-        self.enemies.get(id)
-    }
-
-    fn iter(&self) -> impl Iterator<Item = &EnemyDefinition> {
-        self.enemies.values()
-    }
-}
-
-/// Component to mark spawned enemies
+/// Component to mark that we've created a visual for this enemy
 #[derive(Component)]
-struct Enemy {
-    definition_id: EnemyId,
-}
+struct EnemyVisual;
 
-/// Component for health display
-#[derive(Component)]
-struct HealthText;
-
-/// Load enemies from database into registry
-fn load_enemies(mut registry: ResMut<EnemyRegistry>) {
-    let db_path = "roguebench.db";
-
-    match Database::open(db_path) {
-        Ok(db) => {
-            *registry = EnemyRegistry::load_from_db(&db);
-            info!("Loaded {} enemies from database", registry.enemies.len());
-        }
-        Err(e) => {
-            warn!("Failed to open database: {}. Using empty registry.", e);
-        }
-    }
-}
-
-/// Spawn test enemies based on loaded definitions
-fn spawn_test_enemies(
+/// Render enemies that have been replicated from the server
+fn render_enemies(
     mut commands: Commands,
-    registry: Res<EnemyRegistry>,
     asset_server: Res<AssetServer>,
+    enemies: Query<(Entity, &Enemy, &Position), (With<Replicated>, Without<EnemyVisual>)>,
 ) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
 
-    // Spawn each enemy definition as a colored rectangle
-    for (i, enemy) in registry.iter().enumerate() {
-        let x = -200.0 + (i as f32 * 150.0);
-        let y = 0.0;
+    for (entity, enemy, position) in enemies.iter() {
+        info!("Rendering enemy: {} at {:?}", enemy.name, position.0);
 
-        // Spawn the enemy rectangle
-        commands
-            .spawn((
-                Sprite {
-                    color: Color::srgb(0.8, 0.2, 0.2),
-                    custom_size: Some(Vec2::new(100.0, 100.0)),
+        // Add visual components to the replicated enemy entity
+        commands.entity(entity).insert((
+            Sprite {
+                color: Color::srgb(0.8, 0.2, 0.2),
+                custom_size: Some(Vec2::new(100.0, 100.0)),
+                ..default()
+            },
+            Transform::from_xyz(position.0.x, position.0.y, 0.0),
+            EnemyVisual,
+        ));
+
+        // Spawn text as children
+        commands.entity(entity).with_children(|parent| {
+            // Name label above
+            parent.spawn((
+                Text2d::new(&enemy.name),
+                TextFont {
+                    font: font.clone(),
+                    font_size: 20.0,
                     ..default()
                 },
-                Transform::from_xyz(x, y, 0.0),
-                Enemy {
-                    definition_id: enemy.id.clone(),
+                TextColor(Color::WHITE),
+                Transform::from_xyz(0.0, 70.0, 1.0),
+            ));
+
+            // Health label below
+            parent.spawn((
+                Text2d::new(format!("HP: {}", enemy.health)),
+                TextFont {
+                    font: font.clone(),
+                    font_size: 16.0,
+                    ..default()
                 },
-            ))
-            .with_children(|parent| {
-                // Name label above
-                parent.spawn((
-                    Text2d::new(&enemy.name),
-                    TextFont {
-                        font: font.clone(),
-                        font_size: 20.0,
-                        ..default()
-                    },
-                    TextColor(Color::WHITE),
-                    Transform::from_xyz(0.0, 70.0, 1.0),
-                ));
-
-                // Health label below
-                parent.spawn((
-                    Text2d::new(format!("HP: {}", enemy.health)),
-                    TextFont {
-                        font: font.clone(),
-                        font_size: 16.0,
-                        ..default()
-                    },
-                    TextColor(Color::srgb(0.8, 0.8, 0.8)),
-                    Transform::from_xyz(0.0, -70.0, 1.0),
-                    HealthText,
-                ));
-            });
-
-        info!("Spawned enemy: {} at ({}, {})", enemy.name, x, y);
-    }
-
-    if registry.enemies.is_empty() {
-        info!("No enemies to spawn. Create some in the editor at http://localhost:8080/enemies");
-    }
-}
-
-/// Check for database changes and reload (simple polling for now)
-fn check_for_reload(
-    mut registry: ResMut<EnemyRegistry>,
-    time: Res<Time>,
-    mut last_check: Local<f32>,
-    mut commands: Commands,
-    enemies: Query<Entity, With<Enemy>>,
-    asset_server: Res<AssetServer>,
-) {
-    // Check every 2 seconds
-    *last_check += time.delta_secs();
-    if *last_check < 2.0 {
-        return;
-    }
-    *last_check = 0.0;
-
-    let db_path = "roguebench.db";
-    if let Ok(db) = Database::open(db_path) {
-        let new_registry = EnemyRegistry::load_from_db(&db);
-
-        // Check if anything changed
-        if new_registry.enemies.len() != registry.enemies.len()
-            || new_registry
-                .enemies
-                .iter()
-                .any(|(id, def)| registry.get(id).map(|old| old.health != def.health || old.name != def.name).unwrap_or(true))
-        {
-            info!("Database changed, reloading enemies");
-
-            // Despawn old enemies
-            for entity in enemies.iter() {
-                commands.entity(entity).despawn();
-            }
-
-            // Update registry
-            *registry = new_registry;
-
-            // Respawn enemies
-            let font = asset_server.load("fonts/FiraSans-Bold.ttf");
-            for (i, enemy) in registry.iter().enumerate() {
-                let x = -200.0 + (i as f32 * 150.0);
-                let y = 0.0;
-
-                commands
-                    .spawn((
-                        Sprite {
-                            color: Color::srgb(0.8, 0.2, 0.2),
-                            custom_size: Some(Vec2::new(100.0, 100.0)),
-                            ..default()
-                        },
-                        Transform::from_xyz(x, y, 0.0),
-                        Enemy {
-                            definition_id: enemy.id.clone(),
-                        },
-                    ))
-                    .with_children(|parent| {
-                        parent.spawn((
-                            Text2d::new(&enemy.name),
-                            TextFont {
-                                font: font.clone(),
-                                font_size: 20.0,
-                                ..default()
-                            },
-                            TextColor(Color::WHITE),
-                            Transform::from_xyz(0.0, 70.0, 1.0),
-                        ));
-
-                        parent.spawn((
-                            Text2d::new(format!("HP: {}", enemy.health)),
-                            TextFont {
-                                font: font.clone(),
-                                font_size: 16.0,
-                                ..default()
-                            },
-                            TextColor(Color::srgb(0.8, 0.8, 0.8)),
-                            Transform::from_xyz(0.0, -70.0, 1.0),
-                            HealthText,
-                        ));
-                    });
-            }
-        }
+                TextColor(Color::srgb(0.8, 0.8, 0.8)),
+                Transform::from_xyz(0.0, -70.0, 1.0),
+            ));
+        });
     }
 }

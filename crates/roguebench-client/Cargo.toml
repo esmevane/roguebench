@@ -10,7 +10,9 @@ name = "roguebench-client"
 path = "src/main.rs"
 
 [dependencies]
-roguebench-core = { workspace = true }
+roguebench-protocol = { workspace = true }
 bevy = { workspace = true }
+lightyear = { workspace = true }
+lightyear_udp = "0.25"
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
