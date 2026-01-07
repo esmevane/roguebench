@@ -6182,12 +6182,14 @@ name = "roguebench-editor"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "http-body-util",
  "roguebench-core",
  "roguebench-protocol",
  "roguebench-storage",
  "serde",
  "serde_json",
  "tokio",
+ "tower",
  "tower-http",
  "tracing",
 ]
@@ -6198,6 +6200,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "lightyear",
+ "roguebench-core",
  "roguebench-protocol",
  "roguebench-storage",
  "tokio",

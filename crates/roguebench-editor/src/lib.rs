@@ -41,7 +41,7 @@ struct CreateEntityRequest {
     name: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct EntityResponse {
     id: String,
     name: String,
@@ -158,4 +158,131 @@ pub async fn run(config: EditorConfig) {
 
 pub mod prelude {
     pub use crate::{router, run, EditorConfig};
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::Body;
+    use http_body_util::BodyExt;
+    use roguebench_storage::{ContentStore, MemoryStore};
+    use tower::ServiceExt;
+
+    fn test_router() -> (Router, mpsc::UnboundedReceiver<EditorMessage>) {
+        let storage = Arc::new(MemoryStore::new());
+        let (tx, rx) = mpsc::unbounded_channel();
+        (router(storage, tx), rx)
+    }
+
+    #[tokio::test]
+    async fn index_returns_html() {
+        let (app, _rx) = test_router();
+
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let html = String::from_utf8(body.to_vec()).unwrap();
+        assert!(html.contains("<!DOCTYPE html>"));
+        assert!(html.contains("Entity Editor"));
+    }
+
+    #[tokio::test]
+    async fn list_entities_empty_initially() {
+        let (app, _rx) = test_router();
+
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/entities")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let entities: Vec<EntityResponse> = serde_json::from_slice(&body).unwrap();
+        assert!(entities.is_empty());
+    }
+
+    #[tokio::test]
+    async fn create_entity_returns_201_and_sends_message() {
+        let storage: Arc<dyn ContentStore> = Arc::new(MemoryStore::new());
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let app = router(Arc::clone(&storage), tx);
+
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .method("POST")
+                    .uri("/entities")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"name": "Goblin"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::CREATED);
+
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let created: EntityResponse = serde_json::from_slice(&body).unwrap();
+        assert_eq!(created.name, "Goblin");
+        assert!(!created.id.is_empty());
+
+        // Verify entity was saved to storage
+        let stored = storage.load_entities().unwrap();
+        assert_eq!(stored.len(), 1);
+        assert_eq!(stored[0].name, "Goblin");
+
+        // Verify message was sent to engine
+        let msg = rx.try_recv().unwrap();
+        assert!(matches!(msg, EditorMessage::ReloadEntities));
+    }
+
+    #[tokio::test]
+    async fn list_entities_returns_created_entities() {
+        let storage = Arc::new(MemoryStore::new());
+        let (tx, _rx) = mpsc::unbounded_channel();
+
+        // Pre-populate storage
+        let entity1 = EntityDef::new("Goblin");
+        let entity2 = EntityDef::new("Orc");
+        storage.save_entity(&entity1).unwrap();
+        storage.save_entity(&entity2).unwrap();
+
+        let app = router(storage, tx);
+
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/entities")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let entities: Vec<EntityResponse> = serde_json::from_slice(&body).unwrap();
+        assert_eq!(entities.len(), 2);
+
+        let names: Vec<&str> = entities.iter().map(|e| e.name.as_str()).collect();
+        assert!(names.contains(&"Goblin"));
+        assert!(names.contains(&"Orc"));
+    }
 }
