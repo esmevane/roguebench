@@ -51,18 +51,20 @@ If `/beads` (preferred, Claude skill) or `bd` (secondary, CLI tool) aren't prese
 
 ```
 project/
+├── .beads/
+│   └── beads.db               # Issue tracking database (created by /beads:init)
 ├── .claude/
-│   ├── CLAUDE.md              # Project-specific instructions
 │   ├── agents/                # Project-specific agents (from `docs/agents/`)
 │   ├── skills/                # Project-specific skills (from `docs/skills/`)
+│   └── journal.db             # Session context database (created by /journal:init)
 ├── docs/
 │   ├── mission.md             # Goal, users, success criteria
 │   ├── glossary.md            # Terms of art
 │   ├── workflows.md           # How users accomplish tasks
-│   ├── priorities.md          # Decision framework
 │   ├── approach.md            # Workflow-first development
 │   ├── roles.md               # Agent/team structure
 │   └── getting-started.md     # This file
+├── CLAUDE.md                  # Project instructions (root level)
 └── src/                       # Implementation
 ```
 
@@ -105,29 +107,89 @@ git clone <repo> && cd <repo>
 # or: cargo new --name project && cd project
 
 # Create claude directories
-mkdir -p .claude/agents .claude/rules docs
+mkdir -p .claude/agents .claude/skills docs
+```
 
-# Copy doc templates (if starting fresh)
-# Or create from scratch using this file as reference
+### Copy Agents and Skills
 
-# Initialize Claude Code
+Copy agent and skill specs from docs to .claude:
+
+```bash
+cp docs/agents/*.md .claude/agents/
+cp docs/skills/*.md .claude/skills/
+```
+
+### Initialize Tracking Tools
+
+#### Initialize Beads (Issue Tracking)
+
+```bash
+# Using the beads skill (preferred)
+/beads:init
+
+# Or using the CLI
+bd init <project-prefix>
+```
+
+This creates `.beads/beads.db` for issue tracking. Issues will be named `<prefix>-<hash>`.
+
+#### Initialize Journal (Session Context)
+
+Run `/journal:init` or execute directly:
+
+```bash
+sqlite3 .claude/journal.db << 'EOF'
+CREATE TABLE IF NOT EXISTS entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL CHECK(kind IN ('decision', 'assumption', 'observation', 'question', 'workflow', 'pattern', 'anti_pattern', 'blocker')),
+    content TEXT NOT NULL,
+    confidence REAL DEFAULT 1.0,
+    tags TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_entries_kind ON entries(kind);
+CREATE INDEX IF NOT EXISTS idx_entries_created_at ON entries(created_at);
+CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(content, tags, content='entries', content_rowid='id');
+CREATE TRIGGER IF NOT EXISTS entries_ai AFTER INSERT ON entries BEGIN
+    INSERT INTO entries_fts(rowid, content, tags) VALUES (new.id, new.content, new.tags);
+END;
+CREATE TRIGGER IF NOT EXISTS entries_ad AFTER DELETE ON entries BEGIN
+    INSERT INTO entries_fts(entries_fts, rowid, content, tags) VALUES('delete', old.id, old.content, old.tags);
+END;
+CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN
+    INSERT INTO entries_fts(entries_fts, rowid, content, tags) VALUES('delete', old.id, old.content, old.tags);
+    INSERT INTO entries_fts(rowid, content, tags) VALUES (new.id, new.content, new.tags);
+END;
+EOF
+```
+
+This creates `.claude/journal.db` for persistent context across sessions.
+
+### Verify Setup
+
+```bash
+# Start Claude Code
 claude
 
-# Create agents interactively
-> /agents
-# Follow prompts to create mission-lead, test-designer, architect
+# Check beads is working
+> /beads:stats
 
-# Verify setup
+# Check journal is working (should show empty or first entry)
+> /journal:recall --recent
+
+# Verify with mission-lead agent
 > Use mission-lead to verify this project is set up correctly
 ```
 
-## Concluding setup
+## Concluding Setup
 
 Once you've finished setup, commit your progress:
 
 ```sh
 git add . && git commit -m "Setup complete"
 ```
+
+**Note:** The journal database (`.claude/journal.db`) is typically gitignored for per-developer context. Add it to `.gitignore` if you want separate journals per developer, or commit it for shared institutional memory.
 
 ---
 
@@ -142,20 +204,29 @@ How to start a development session.
    git pull
    ```
 
-2. **Check context**
+2. **Verify tools are initialized**
    ```bash
-   claude
-   > /beads:ready              # What's unblocked?
-   > /beads:list --status open # What's in progress?
-   > /journal:recall --recent   # What did we decide/learn?
+   # If .beads/ doesn't exist:
+   /beads:init
+
+   # If .claude/journal.db doesn't exist:
+   /journal:init
    ```
 
-3. **Quick self-review** (verify context)
-   ```
-   > /self-review --quick
+3. **Check context**
+   ```bash
+   /beads:ready                # What's unblocked?
+   /beads:list --status open   # What's in progress?
+   /journal:recall --recent    # What did we decide/learn?
+   /journal:review             # Open questions/blockers
    ```
 
-4. **Identify work item**
+4. **Quick self-review** (verify context)
+   ```
+   /self-review --quick
+   ```
+
+5. **Identify work item**
    - Pick from ready issues, or
    - Identify emergent need from context
 
@@ -352,15 +423,24 @@ When blocked:
 # Start Claude
 claude
 
-# Check issues
+# Issue tracking (beads)
+/beads:init                     # Initialize (once per project)
 /beads:ready                    # Unblocked work
 /beads:list --status open       # All open issues
 /beads:show {id}                # Issue details
-
-# Update tracking
 /beads:update {id} --status X   # Change status
 /beads:close {id} "reason"      # Complete issue
 /beads:sync --message "X"       # Sync with git
+
+# Session context (journal)
+/journal:init                   # Initialize (once per project)
+/journal:recall --recent        # Last 10 entries
+/journal:recall --kind decision # All decisions
+/journal:recall "search term"   # Full-text search
+/journal:remember decision "X"  # Record a decision
+/journal:remember observation "X" --tags "tag1,tag2"
+/journal:review                 # Open questions/blockers
+/journal:stats                  # Entry counts by kind
 
 # Agents
 /agents                         # Manage agents
